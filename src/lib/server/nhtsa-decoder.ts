@@ -41,7 +41,7 @@ async function fetchWithRetry(url: string): Promise<Response> {
 			return fetch(url, { signal: AbortSignal.timeout(10000) });
 		}
 		return response;
-	} catch (error) {
+	} catch {
 		await new Promise((resolve) => setTimeout(resolve, 1000));
 		return fetch(url, { signal: AbortSignal.timeout(10000) });
 	}
