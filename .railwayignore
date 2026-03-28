@@ -1,0 +1,11 @@
+# Railway ignore file - exclude unnecessary files from deployment
+*.md
+!README.md
+docs/
+.kiro/
+.vscode/
+.DS_Store
+*.log
+*.test.ts
+*.test.js
+vitest.config.*
