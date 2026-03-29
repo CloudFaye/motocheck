@@ -1,16 +1,10 @@
 [build]
 builder = "RAILPACK"
 
-[build.buildCommand]
-command = "pnpm install && npx puppeteer browsers install chrome && pnpm run build"
-
 [deploy]
 startCommand = "node build/index.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+healthcheckPath = "/"
+healthcheckTimeout = 300
 
-[deploy.healthcheckPath]
-path = "/"
-
-[deploy.healthcheckTimeout]
-timeout = 300
