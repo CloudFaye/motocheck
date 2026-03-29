@@ -18,6 +18,7 @@
 		"db:push": "drizzle-kit push",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
+		"db:migrate:railway": "tsx migrate.ts",
 		"db:studio": "drizzle-kit studio",
 		"db:clear-invalid": "source .env && psql \"$DATABASE_URL\" -f clear-invalid-vins.sql",
 		"generate:sample-pdf": "npx tsx generate-sample-pdf.ts",
