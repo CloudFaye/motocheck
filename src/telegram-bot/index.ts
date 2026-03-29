@@ -125,7 +125,7 @@ async function handleVinCheck(ctx: any, vin: string) {
 			lookupId,
 			email: 'telegram@user.com',
 			amountNgn: String(amountNgn),
-			flwTxRef: payment.txRef,
+			paymentRef: payment.txRef,
 			status: 'pending',
 			source: 'telegram',
 			telegramChatId: chatId

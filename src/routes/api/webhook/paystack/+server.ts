@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { handleFlutterwaveWebhook } from '$lib/server/webhook-handler';
+import { handlePaystackWebhook } from '$lib/server/webhook-handler';
 import { db } from '$lib/server/db';
 import { orders, reports, lookups } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
@@ -9,7 +9,7 @@ import { uploadReport } from '$lib/server/storage-service';
 import { sendReport } from '$lib/server/email-service';
 
 export const POST: RequestHandler = async ({ request }) => {
-	const verifHash = request.headers.get('verif-hash') || '';
+	const signature = request.headers.get('x-paystack-signature') || '';
 	const rawBody = await request.text();
 	
 	let payload;
@@ -20,7 +20,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ status: 'received' });
 	}
 
-	const result = await handleFlutterwaveWebhook(rawBody, verifHash, payload);
+	const result = await handlePaystackWebhook(rawBody, signature, payload);
 
 	// Always return 200
 	if (!result.valid) {
@@ -29,7 +29,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	try {
 		// Find order
-		const order = await db.select().from(orders).where(eq(orders.flwTxRef, result.txRef!)).limit(1);
+		const order = await db.select().from(orders).where(eq(orders.paymentRef, result.txRef!)).limit(1);
 
 		if (order.length === 0) {
 			return json({ status: 'received' });
@@ -47,7 +47,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			.update(orders)
 			.set({
 				status: 'paid',
-				flwTxId: result.txId,
+				paymentId: result.txId,
 				paidAt: new Date()
 			})
 			.where(eq(orders.id, orderRecord.id));
@@ -127,7 +127,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	} catch (error) {
 		console.error('Error processing webhook:', error);
-		// Always return 200 to prevent Flutterwave retries
+		// Always return 200 to prevent Paystack retries
 	}
 
 	return json({ status: 'received' });

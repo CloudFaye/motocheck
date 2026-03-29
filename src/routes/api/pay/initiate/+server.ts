@@ -44,7 +44,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			lookupId,
 			email,
 			amountNgn: String(amountNgn),
-			flwTxRef: payment.txRef,
+			paymentRef: payment.txRef,
 			status: 'pending',
 			source: 'web'
 		});
@@ -52,7 +52,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ paymentUrl: payment.paymentUrl });
 	} catch (error) {
 		console.error('Payment initiation error:', error);
-		if (error instanceof Error && error.message.includes('Flutterwave')) {
+		if (error instanceof Error && error.message.includes('Paystack')) {
 			return json({ error: 'Payment gateway unavailable' }, { status: 502 });
 		}
 		return json({ error: 'Failed to initiate payment' }, { status: 500 });

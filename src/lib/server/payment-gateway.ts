@@ -19,55 +19,52 @@ export async function initiatePayment(
 ): Promise<PaymentInitiationResult> {
 	const txRef = `vin-${crypto.randomUUID()}`;
 
-	const response = await fetch('https://api.flutterwave.com/v3/payments', {
+	const response = await fetch('https://api.paystack.co/transaction/initialize', {
 		method: 'POST',
 		headers: {
-			Authorization: `Bearer ${config.FLW_SECRET_KEY}`,
+			Authorization: `Bearer ${config.PAYSTACK_SECRET_KEY}`,
 			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify({
-			tx_ref: txRef,
-			amount: amountNgn,
+			reference: txRef,
+			amount: amountNgn * 100, // Paystack uses kobo (smallest currency unit)
+			email,
 			currency: 'NGN',
-			redirect_url: `${config.PUBLIC_BASE_URL}/payment/success`,
-			customer: { email },
-			customizations: {
-				title: 'VIN Check Report',
-				description: 'Vehicle Import Duty Report'
-			},
-			meta: metadata
+			callback_url: `${config.PUBLIC_BASE_URL}/payment/success`,
+			metadata
 		}),
 		signal: AbortSignal.timeout(15000)
 	});
 
 	if (!response.ok) {
-		throw new Error(`Flutterwave API error: ${response.status}`);
+		const errorData = await response.json().catch(() => ({}));
+		throw new Error(`Paystack API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
 	}
 
 	const data = await response.json();
 	return {
-		paymentUrl: data.data.link,
+		paymentUrl: data.data.authorization_url,
 		txRef
 	};
 }
 
-export async function verifyTransaction(txId: string): Promise<TransactionVerification> {
-	const response = await fetch(`https://api.flutterwave.com/v3/transactions/${txId}/verify`, {
+export async function verifyTransaction(reference: string): Promise<TransactionVerification> {
+	const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
 		headers: {
-			Authorization: `Bearer ${config.FLW_SECRET_KEY}`
+			Authorization: `Bearer ${config.PAYSTACK_SECRET_KEY}`
 		},
 		signal: AbortSignal.timeout(15000)
 	});
 
 	if (!response.ok) {
-		throw new Error(`Flutterwave verification error: ${response.status}`);
+		throw new Error(`Paystack verification error: ${response.status}`);
 	}
 
 	const data = await response.json();
 	return {
 		status: data.data.status,
-		amount: data.data.amount,
+		amount: data.data.amount / 100, // Convert from kobo to naira
 		currency: data.data.currency,
-		txRef: data.data.tx_ref
+		txRef: data.data.reference
 	};
 }

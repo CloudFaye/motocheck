@@ -7,9 +7,7 @@
 interface Config {
 	DATABASE_URL: string;
 	NHTSA_API_URL: string;
-	FLW_PUBLIC_KEY: string;
-	FLW_SECRET_KEY: string;
-	FLW_SECRET_HASH: string;
+	PAYSTACK_SECRET_KEY: string;
 	RESEND_API_KEY: string;
 	FROM_EMAIL: string;
 	R2_ENDPOINT: string;
@@ -24,9 +22,7 @@ interface Config {
 const requiredEnvVars: (keyof Config)[] = [
 	'DATABASE_URL',
 	'NHTSA_API_URL',
-	'FLW_PUBLIC_KEY',
-	'FLW_SECRET_KEY',
-	'FLW_SECRET_HASH',
+	'PAYSTACK_SECRET_KEY',
 	'RESEND_API_KEY',
 	'FROM_EMAIL',
 	'R2_ENDPOINT',
@@ -61,9 +57,7 @@ function loadConfig(): Config {
 	return {
 		DATABASE_URL: process.env.DATABASE_URL!,
 		NHTSA_API_URL: process.env.NHTSA_API_URL!,
-		FLW_PUBLIC_KEY: process.env.FLW_PUBLIC_KEY!,
-		FLW_SECRET_KEY: process.env.FLW_SECRET_KEY!,
-		FLW_SECRET_HASH: process.env.FLW_SECRET_HASH!,
+		PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY!,
 		RESEND_API_KEY: process.env.RESEND_API_KEY!,
 		FROM_EMAIL: process.env.FROM_EMAIL!,
 		R2_ENDPOINT: process.env.R2_ENDPOINT!,

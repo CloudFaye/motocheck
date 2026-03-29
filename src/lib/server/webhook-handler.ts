@@ -2,11 +2,11 @@ import { config } from './config';
 import { verifyTransaction } from './payment-gateway';
 import crypto from 'crypto';
 
-export interface WebhookPayload {
+export interface PaystackWebhookPayload {
 	event: string;
 	data: {
-		id: string;
-		tx_ref: string;
+		id: number;
+		reference: string;
 		amount: number;
 		currency: string;
 		status: string;
@@ -20,39 +20,42 @@ export interface WebhookResult {
 	txId?: string;
 }
 
-export async function handleFlutterwaveWebhook(
+export async function handlePaystackWebhook(
 	rawBody: string,
-	verifHash: string,
-	payload: WebhookPayload
+	signature: string,
+	payload: PaystackWebhookPayload
 ): Promise<WebhookResult> {
 	// Verify HMAC signature
-	const hash = crypto.createHmac('sha512', config.FLW_SECRET_HASH).update(rawBody).digest('hex');
+	const hash = crypto
+		.createHmac('sha512', config.PAYSTACK_SECRET_KEY)
+		.update(rawBody)
+		.digest('hex');
 
-	if (hash !== verifHash) {
+	if (hash !== signature) {
 		return { valid: false };
 	}
 
 	// Check event type
-	if (payload.event !== 'charge.completed') {
+	if (payload.event !== 'charge.success') {
 		return { valid: false };
 	}
 
 	// Check status
-	if (payload.data.status !== 'successful') {
+	if (payload.data.status !== 'success') {
 		return { valid: false };
 	}
 
-	// Re-verify with Flutterwave API
-	const verification = await verifyTransaction(payload.data.id);
+	// Re-verify with Paystack API
+	const verification = await verifyTransaction(payload.data.reference);
 
-	if (verification.status !== 'successful') {
+	if (verification.status !== 'success') {
 		return { valid: false };
 	}
 
 	return {
 		valid: true,
-		txRef: payload.data.tx_ref,
-		amount: payload.data.amount,
-		txId: payload.data.id
+		txRef: payload.data.reference,
+		amount: payload.data.amount / 100, // Convert from kobo to naira
+		txId: String(payload.data.id)
 	};
 }
