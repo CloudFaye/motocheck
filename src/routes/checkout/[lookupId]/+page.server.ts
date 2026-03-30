@@ -16,25 +16,39 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	const data = lookup[0];
-	const decoded = data.decodedJson as any;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const decoded = data.decodedJson as Record<string, any>;
 	const duty = data.dutyJson as DutyData;
 
 	// Handle both old and new data structures
 	const isNewStructure = decoded.identification !== undefined;
 
+	// Helper to safely get value with fallback
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const safeGet = (value: any, fallback: string = 'N/A'): string => {
+		if (value === null || value === undefined || value === '') return fallback;
+		if (typeof value === 'object') return fallback;
+		return String(value);
+	};
+
 	return {
 		lookupId: data.id,
 		vin: data.vin,
-		make: isNewStructure ? decoded.identification.make : decoded.make,
-		model: isNewStructure ? decoded.identification.model : decoded.model,
-		year: isNewStructure ? decoded.identification.modelYear : decoded.year,
-		engine: isNewStructure ? (decoded.engine.model || decoded.engine.configuration) : decoded.engine,
-		bodyClass: isNewStructure ? decoded.body.bodyClass : decoded.bodyClass,
-		plantCountry: isNewStructure ? decoded.manufacturing.plantCountry : decoded.plantCountry,
-		fuelType: isNewStructure ? decoded.engine.fuelTypePrimary : decoded.fuelType,
-		cifUsd: parseFloat(data.ncsValuationUsd),
-		confidence: data.valuationConfidence,
-		totalDuty: duty.totalDutyNgn,
-		cbnRate: parseFloat(data.cbnRateNgn)
+		make: safeGet(isNewStructure ? decoded.identification?.make : decoded.make, 'Unknown'),
+		model: safeGet(isNewStructure ? decoded.identification?.model : decoded.model, 'Unknown'),
+		year: safeGet(isNewStructure ? decoded.identification?.modelYear : decoded.year, 'Unknown'),
+		engine: safeGet(
+			isNewStructure 
+				? (decoded.engine?.model || decoded.engine?.configuration) 
+				: decoded.engine,
+			'Unknown'
+		),
+		bodyClass: safeGet(isNewStructure ? decoded.body?.bodyClass : decoded.bodyClass, 'Unknown'),
+		plantCountry: safeGet(isNewStructure ? decoded.manufacturing?.plantCountry : decoded.plantCountry, 'Unknown'),
+		fuelType: safeGet(isNewStructure ? decoded.engine?.fuelTypePrimary : decoded.fuelType, 'Unknown'),
+		cifUsd: parseFloat(data.ncsValuationUsd) || 0,
+		confidence: data.valuationConfidence || 'unknown',
+		totalDuty: duty?.totalDutyNgn || 0,
+		cbnRate: parseFloat(data.cbnRateNgn) || 0
 	};
 };

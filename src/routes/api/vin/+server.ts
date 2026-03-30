@@ -21,7 +21,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	let body;
 	try {
 		body = await request.json();
-	} catch (error) {
+	} catch {
 		return json({ error: 'Invalid JSON payload' }, { status: 400 });
 	}
 
@@ -44,8 +44,10 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 
 	if (cached.length > 0) {
 		const lookup = cached[0];
-		const decoded = lookup.decodedJson as any;
-		const duty = lookup.dutyJson as any;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const decoded = lookup.decodedJson as Record<string, any>;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const duty = lookup.dutyJson as Record<string, any>;
 
 		return json({
 			lookupId: lookup.id,
@@ -71,15 +73,15 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 			vehicleData.identification.model
 		);
 		const rate = getCurrentRate();
-		const duty = calculateDuty(valuation.cifUsd, rate.cbnRate);
+		const dutyCalc = calculateDuty(valuation.cifUsd, rate.cbnRate);
 
 		// Store comprehensive data in cache
 		const [inserted] = await db.insert(lookups).values({
 			vin: normalizedVin,
-			decodedJson: vehicleData, // Store full comprehensive data
+			decodedJson: vehicleData,
 			ncsValuationUsd: String(valuation.cifUsd),
 			valuationConfidence: valuation.confidence,
-			dutyJson: duty,
+			dutyJson: dutyCalc,
 			cbnRateNgn: String(rate.cbnRate),
 			rateFetchedAt: rate.fetchedAt
 		}).returning();
@@ -94,7 +96,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 			bodyClass: vehicleData.body.bodyClass,
 			plantCountry: vehicleData.manufacturing.plantCountry,
 			fuelType: vehicleData.engine.fuelTypePrimary,
-			dutyEstimate: duty.totalDutyNgn,
+			dutyEstimate: dutyCalc.totalDutyNgn,
 			confidence: valuation.confidence
 		});
 	} catch (error) {

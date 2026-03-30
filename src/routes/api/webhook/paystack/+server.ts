@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { generateVehicleReport } from '$lib/server/reports/generator';
 import { uploadReport } from '$lib/server/storage-service';
 import { sendReport } from '$lib/server/email-service';
+import { config } from '$lib/server/config';
 import type { ComprehensiveVehicleData } from '$lib/server/vehicle/types';
 import type { RequestHandler } from '@sveltejs/kit';
 
@@ -137,19 +138,23 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Save report record
 		await db.insert(reports).values({
+			id: reportId,
 			orderId: orderRecord.id,
 			r2Key: storage.r2Key,
 			pdfHash: report.hash,
-			signedUrl: storage.signedUrl,
+			signedUrl: '', // No longer using signed URLs
 			sentAt: new Date()
 		});
 
 		console.log('✅ Report record saved');
 
+		// Generate secure download URL
+		const downloadUrl = `${config.PUBLIC_BASE_URL}/api/reports/${reportId}?email=${encodeURIComponent(orderRecord.email)}`;
+
 		// Send email or Telegram
 		if (orderRecord.source === 'web') {
 			console.log('📧 Sending email to:', orderRecord.email);
-			await sendReport(orderRecord.email, reportId, lookupData.vin, storage.signedUrl);
+			await sendReport(orderRecord.email, reportId, lookupData.vin, downloadUrl);
 			console.log('✅ Email sent');
 		} else if (orderRecord.source === 'telegram' && orderRecord.telegramChatId) {
 			console.log('📱 Sending to Telegram chat:', orderRecord.telegramChatId);

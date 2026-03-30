@@ -1,5 +1,4 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from './config';
 
 const s3Client = new S3Client({
@@ -13,7 +12,7 @@ const s3Client = new S3Client({
 
 export interface UploadResult {
 	r2Key: string;
-	signedUrl: string;
+	reportId: string;
 }
 
 export async function uploadReport(reportId: string, pdfBuffer: Buffer): Promise<UploadResult> {
@@ -31,16 +30,27 @@ export async function uploadReport(reportId: string, pdfBuffer: Buffer): Promise
 		})
 	);
 
-	const signedUrl = await generateSignedUrl(r2Key, 72);
-
-	return { r2Key, signedUrl };
+	return { r2Key, reportId };
 }
 
-export async function generateSignedUrl(r2Key: string, expiryHours: number): Promise<string> {
+export async function getReport(r2Key: string): Promise<Buffer> {
 	const command = new GetObjectCommand({
 		Bucket: config.R2_BUCKET_NAME,
 		Key: r2Key
 	});
 
-	return getSignedUrl(s3Client, command, { expiresIn: expiryHours * 3600 });
+	const response = await s3Client.send(command);
+	const stream = response.Body;
+
+	if (!stream) {
+		throw new Error('No data returned from R2');
+	}
+
+	// Convert stream to buffer
+	const chunks: Uint8Array[] = [];
+	for await (const chunk of stream as any) {
+		chunks.push(chunk);
+	}
+
+	return Buffer.concat(chunks);
 }
