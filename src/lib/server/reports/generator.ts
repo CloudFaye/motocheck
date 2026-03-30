@@ -81,7 +81,8 @@ export async function generateVehicleReport(
 		const pdfBuffer = await page.pdf({
 			format: 'A4',
 			printBackground: true,
-			margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' }
+			margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
+			preferCSSPageSize: true
 		});
 
 		// Generate hash for integrity verification

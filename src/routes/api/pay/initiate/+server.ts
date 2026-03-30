@@ -51,7 +51,6 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		return json({ paymentUrl: payment.paymentUrl });
 	} catch (error) {
-		console.error('Payment initiation error:', error);
 		if (error instanceof Error && error.message.includes('Paystack')) {
 			return json({ error: 'Payment gateway unavailable' }, { status: 502 });
 		}

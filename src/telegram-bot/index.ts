@@ -1,7 +1,7 @@
 import { Telegraf } from 'telegraf';
 import { config } from '../lib/server/config';
 import { checkRateLimit } from '../lib/server/rate-limiter';
-import { decodeVIN } from '../lib/server/nhtsa-decoder';
+import { decodeVehicle } from '../lib/server/vehicle/decoder';
 import { lookupValuation } from '../lib/server/ncs-valuator';
 import { calculateDuty } from '../lib/server/duty-engine';
 import { getCurrentRate } from '../lib/server/exchange-rate-manager';
@@ -9,6 +9,7 @@ import { initiatePayment } from '../lib/server/payment-gateway';
 import { db } from '../lib/server/db';
 import { lookups, orders } from '../lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import type { ComprehensiveVehicleData } from '../lib/server/vehicle/types';
 
 const bot = new Telegraf(config.TELEGRAM_BOT_TOKEN);
 
@@ -78,20 +79,24 @@ async function handleVinCheck(ctx: any, vin: string) {
 		const cached = await db.select().from(lookups).where(eq(lookups.vin, vin)).limit(1);
 
 		let lookupId: string;
-		let decoded: any;
+		let vehicleData: ComprehensiveVehicleData;
 		let duty: any;
 		let confidence: string;
 
 		if (cached.length > 0) {
 			const lookup = cached[0];
 			lookupId = lookup.id;
-			decoded = lookup.decodedJson;
+			vehicleData = lookup.decodedJson as ComprehensiveVehicleData;
 			duty = lookup.dutyJson;
 			confidence = lookup.valuationConfidence;
 		} else {
 			// Decode VIN
-			decoded = await decodeVIN(vin);
-			const valuation = lookupValuation(decoded.year, decoded.make, decoded.model);
+			vehicleData = await decodeVehicle(vin);
+			const valuation = lookupValuation(
+				vehicleData.identification.modelYear,
+				vehicleData.identification.make,
+				vehicleData.identification.model
+			);
 			const rate = getCurrentRate();
 			duty = calculateDuty(valuation.cifUsd, rate.cbnRate);
 
@@ -100,7 +105,7 @@ async function handleVinCheck(ctx: any, vin: string) {
 				.insert(lookups)
 				.values({
 					vin,
-					decodedJson: decoded,
+					decodedJson: vehicleData,
 					ncsValuationUsd: String(valuation.cifUsd),
 					valuationConfidence: valuation.confidence,
 					dutyJson: duty,
@@ -134,11 +139,11 @@ async function handleVinCheck(ctx: any, vin: string) {
 		// Format response
 		const message =
 			`✅ Vehicle Found!\n\n` +
-			`🚗 ${decoded.make} ${decoded.model} (${decoded.year})\n` +
-			`🔧 Engine: ${decoded.engine}\n` +
-			`🏭 Origin: ${decoded.plantCountry}\n` +
-			`⛽ Fuel: ${decoded.fuelType}\n` +
-			`📦 Body: ${decoded.bodyClass}\n\n` +
+			`🚗 ${vehicleData.identification.make} ${vehicleData.identification.model} (${vehicleData.identification.modelYear})\n` +
+			`🔧 Engine: ${vehicleData.engine.model || vehicleData.engine.configuration}\n` +
+			`🏭 Origin: ${vehicleData.manufacturing.plantCountry}\n` +
+			`⛽ Fuel: ${vehicleData.engine.fuelTypePrimary}\n` +
+			`📦 Body: ${vehicleData.body.bodyClass}\n\n` +
 			`💰 Estimated Import Duty: ₦${duty.totalDutyNgn.toLocaleString()}\n` +
 			`📊 Confidence: ${confidence}\n\n` +
 			`📄 Get full detailed report for ₦5,000\n` +

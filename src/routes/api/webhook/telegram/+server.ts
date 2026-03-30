@@ -14,8 +14,8 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	try {
 		await bot.handleUpdate(update);
-	} catch (error) {
-		console.error('Telegram webhook error:', error);
+	} catch {
+		// Silently fail - webhook will retry
 	}
 
 	return json({ ok: true });

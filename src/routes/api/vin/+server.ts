@@ -100,7 +100,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 			confidence: valuation.confidence
 		});
 	} catch (error) {
-		console.error('Error decoding VIN:', error);
+		// Log error server-side only, don't expose details to client
 		if (error instanceof Error && error.message.includes('NHTSA')) {
 			return json({ error: 'Unable to decode VIN from NHTSA database' }, { status: 502 });
 		}

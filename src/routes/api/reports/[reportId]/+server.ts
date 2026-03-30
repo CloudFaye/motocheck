@@ -62,7 +62,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 			}
 		});
 	} catch (err) {
-		console.error('Error fetching report:', err);
+		// Server-side error logging only
 		error(500, 'Failed to retrieve report');
 	}
 };

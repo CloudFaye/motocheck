@@ -48,6 +48,7 @@ export async function getReport(r2Key: string): Promise<Buffer> {
 
 	// Convert stream to buffer
 	const chunks: Uint8Array[] = [];
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	for await (const chunk of stream as any) {
 		chunks.push(chunk);
 	}

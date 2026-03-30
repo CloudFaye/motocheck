@@ -59,10 +59,19 @@ export async function decodeVIN(vin: string): Promise<Map<string, string>> {
 	return resultMap;
 }
 
+interface RecallResult {
+	Component?: string;
+	Summary?: string;
+	Consequence?: string;
+	Remedy?: string;
+	ReportReceivedDate?: string;
+	NHTSACampaignNumber?: string;
+}
+
 /**
  * Fetch recall information for a VIN
  */
-export async function getRecalls(vin: string): Promise<any[]> {
+export async function getRecalls(vin: string): Promise<RecallResult[]> {
 	try {
 		const url = `${config.NHTSA_API_URL}/Recalls/GetRecallsByVIN/${vin}?format=json`;
 		const response = await fetchWithRetry(url);

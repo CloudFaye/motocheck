@@ -161,10 +161,19 @@ export function mapValidation(data: Map<string, string>): ValidationInfo {
 	};
 }
 
+interface RecallResult {
+	Component?: string;
+	Summary?: string;
+	Consequence?: string;
+	Remedy?: string;
+	ReportReceivedDate?: string;
+	NHTSACampaignNumber?: string;
+}
+
 /**
  * Map recall data to structured format
  */
-export function mapRecalls(recalls: any[]): RecallInfo[] {
+export function mapRecalls(recalls: RecallResult[]): RecallInfo[] {
 	return recalls.map((recall) => ({
 		component: recall.Component || '',
 		summary: recall.Summary || '',

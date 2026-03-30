@@ -153,11 +153,11 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Send email or Telegram
 		if (orderRecord.source === 'web') {
-			console.log('📧 Sending email to:', orderRecord.email);
+			console.log('📧 Sending email notification');
 			await sendReport(orderRecord.email, reportId, lookupData.vin, downloadUrl);
 			console.log('✅ Email sent');
 		} else if (orderRecord.source === 'telegram' && orderRecord.telegramChatId) {
-			console.log('📱 Sending to Telegram chat:', orderRecord.telegramChatId);
+			console.log('📱 Sending to Telegram');
 			// Send PDF to Telegram
 			const { bot } = await import('../../../../telegram-bot');
 			await bot.telegram.sendDocument(orderRecord.telegramChatId, {

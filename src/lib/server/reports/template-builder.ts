@@ -1,6 +1,6 @@
 /**
  * PDF Template Builder
- * Builds HTML templates for vehicle reports from comprehensive vehicle data
+ * Clean, professional layout for vehicle reports
  */
 
 import type { ComprehensiveVehicleData } from '../vehicle/types';
@@ -24,222 +24,185 @@ interface ReportOptions {
 	cbnRate?: number;
 }
 
-/**
- * Build vehicle specifications section
- */
 function buildSpecificationsSection(data: ComprehensiveVehicleData): string {
 	const specs = [
-		{ label: 'Make', value: data.identification.make },
-		{ label: 'Model', value: data.identification.model },
-		{ label: 'Year', value: data.identification.modelYear },
-		{ label: 'Series', value: data.identification.series },
-		{ label: 'Trim', value: data.identification.trim },
-		{ label: 'Body Class', value: data.body.bodyClass },
-		{ label: 'Vehicle Type', value: data.identification.vehicleType },
-		{ label: 'Doors', value: data.dimensions.doors }
-	].filter(spec => spec.value);
+		['Make', data.identification.make],
+		['Model', data.identification.model],
+		['Year', data.identification.modelYear],
+		['Series', data.identification.series],
+		['Trim', data.identification.trim],
+		['Body Class', data.body.bodyClass],
+		['Vehicle Type', data.identification.vehicleType],
+		['Doors', data.dimensions.doors],
+		['Seats', data.body.numberOfSeats]
+	].filter(([, value]) => value);
 
 	return `
 		<div class="section">
-			<div class="section-header">
-				<div class="section-icon">🚗</div>
-				<div class="section-title">Vehicle Specifications</div>
-			</div>
-			<div class="info-grid">
-				${specs.map(spec => `
-					<div class="info-card">
-						<div class="info-label">${spec.label}</div>
-						<div class="info-value">${spec.value}</div>
-					</div>
+			<div class="section-title">Vehicle Specifications</div>
+			<table class="data-table">
+				${specs.map(([label, value]) => `
+					<tr>
+						<td>${label}</td>
+						<td>${value}</td>
+					</tr>
 				`).join('')}
-			</div>
+			</table>
 		</div>
 	`;
 }
 
-/**
- * Build engine section
- */
 function buildEngineSection(data: ComprehensiveVehicleData): string {
 	const engine = data.engine;
 	const specs = [
-		{ label: 'Engine Model', value: engine.model },
-		{ label: 'Configuration', value: engine.configuration },
-		{ label: 'Cylinders', value: engine.cylinders },
-		{ label: 'Displacement', value: engine.displacementL ? `${engine.displacementL}L` : engine.displacementCC ? `${engine.displacementCC}cc` : '' },
-		{ label: 'Power Output', value: engine.power ? `${engine.power} kW` : '' },
-		{ label: 'Fuel Type', value: engine.fuelTypePrimary },
-		{ label: 'Turbo', value: engine.turbo },
-		{ label: 'Manufacturer', value: engine.manufacturer }
-	].filter(spec => spec.value);
+		['Engine Model', engine.model],
+		['Configuration', engine.configuration],
+		['Cylinders', engine.cylinders],
+		['Displacement', engine.displacementL ? `${engine.displacementL}L` : engine.displacementCC ? `${engine.displacementCC}cc` : ''],
+		['Power Output', engine.power ? `${engine.power} kW` : ''],
+		['Fuel Type (Primary)', engine.fuelTypePrimary],
+		['Fuel Type (Secondary)', engine.fuelTypeSecondary],
+		['Turbo', engine.turbo],
+		['Manufacturer', engine.manufacturer]
+	].filter(([, value]) => value);
 
 	if (specs.length === 0) return '';
 
 	return `
 		<div class="section">
-			<div class="section-header">
-				<div class="section-icon">⚙️</div>
-				<div class="section-title">Engine & Performance</div>
-			</div>
-			<div class="info-grid">
-				${specs.map(spec => `
-					<div class="info-card">
-						<div class="info-label">${spec.label}</div>
-						<div class="info-value">${spec.value}</div>
-					</div>
+			<div class="section-title">Engine & Performance</div>
+			<table class="data-table">
+				${specs.map(([label, value]) => `
+					<tr>
+						<td>${label}</td>
+						<td>${value}</td>
+					</tr>
 				`).join('')}
-			</div>
+			</table>
 		</div>
 	`;
 }
 
-/**
- * Build transmission section
- */
 function buildTransmissionSection(data: ComprehensiveVehicleData): string {
 	const trans = data.transmission;
 	const specs = [
-		{ label: 'Transmission', value: trans.transmissionStyle },
-		{ label: 'Speeds', value: trans.transmissionSpeeds },
-		{ label: 'Drive Type', value: trans.driveType }
-	].filter(spec => spec.value);
+		['Transmission Style', trans.transmissionStyle],
+		['Number of Speeds', trans.transmissionSpeeds],
+		['Drive Type', trans.driveType]
+	].filter(([, value]) => value);
 
 	if (specs.length === 0) return '';
 
 	return `
 		<div class="section">
-			<div class="section-header">
-				<div class="section-icon">🔧</div>
-				<div class="section-title">Transmission & Drivetrain</div>
-			</div>
-			<div class="info-grid info-grid-3">
-				${specs.map(spec => `
-					<div class="info-card">
-						<div class="info-label">${spec.label}</div>
-						<div class="info-value">${spec.value}</div>
-					</div>
+			<div class="section-title">Transmission & Drivetrain</div>
+			<table class="data-table">
+				${specs.map(([label, value]) => `
+					<tr>
+						<td>${label}</td>
+						<td>${value}</td>
+					</tr>
 				`).join('')}
-			</div>
+			</table>
 		</div>
 	`;
 }
 
-/**
- * Build dimensions section
- */
 function buildDimensionsSection(data: ComprehensiveVehicleData): string {
 	const dims = data.dimensions;
 	const specs = [
-		{ label: 'Wheelbase', value: dims.wheelBaseShort || dims.wheelBaseLong ? `${dims.wheelBaseShort || dims.wheelBaseLong}"` : '' },
-		{ label: 'GVWR', value: dims.gvwr || dims.gvwrRange },
-		{ label: 'Curb Weight', value: dims.curbWeight ? `${dims.curbWeight} lbs` : '' },
-		{ label: 'Seats', value: data.body.numberOfSeats },
-		{ label: 'Seat Rows', value: data.body.numberOfSeatRows },
-		{ label: 'Bed Length', value: dims.bedLength ? `${dims.bedLength}"` : '' }
-	].filter(spec => spec.value);
+		['Wheelbase', dims.wheelBaseShort || dims.wheelBaseLong ? `${dims.wheelBaseShort || dims.wheelBaseLong}"` : ''],
+		['GVWR', dims.gvwr || dims.gvwrRange],
+		['Curb Weight', dims.curbWeight ? `${dims.curbWeight} lbs` : ''],
+		['Bed Length', dims.bedLength ? `${dims.bedLength}"` : ''],
+		['Cab Type', dims.cabType]
+	].filter(([, value]) => value);
 
 	if (specs.length === 0) return '';
 
 	return `
 		<div class="section">
-			<div class="section-header">
-				<div class="section-icon">📏</div>
-				<div class="section-title">Dimensions & Capacity</div>
-			</div>
-			<div class="info-grid info-grid-3">
-				${specs.map(spec => `
-					<div class="info-card">
-						<div class="info-label">${spec.label}</div>
-						<div class="info-value">${spec.value}</div>
-					</div>
+			<div class="section-title">Dimensions & Capacity</div>
+			<table class="data-table">
+				${specs.map(([label, value]) => `
+					<tr>
+						<td>${label}</td>
+						<td>${value}</td>
+					</tr>
 				`).join('')}
-			</div>
+			</table>
 		</div>
 	`;
 }
 
-/**
- * Build safety features section
- */
 function buildSafetySection(data: ComprehensiveVehicleData): string {
 	const safety = data.safety;
 	const features = [
-		{ label: 'Front Airbags', value: safety.airBagLocFront, icon: '✓' },
-		{ label: 'Side Airbags', value: safety.airBagLocSide, icon: '✓' },
-		{ label: 'Curtain Airbags', value: safety.airBagLocCurtain, icon: '✓' },
-		{ label: 'ABS', value: safety.abs, icon: '✓' },
-		{ label: 'ESC', value: safety.esc, icon: '✓' },
-		{ label: 'Traction Control', value: safety.tractionControl, icon: '✓' },
-		{ label: 'Pretensioner', value: safety.pretensioner, icon: '✓' },
-		{ label: 'Brake System', value: safety.brakeSystemType, icon: '✓' }
-	].filter(feat => feat.value);
+		['Front Airbags', safety.airBagLocFront],
+		['Side Airbags', safety.airBagLocSide],
+		['Curtain Airbags', safety.airBagLocCurtain],
+		['Knee Airbags', safety.airBagLocKnee],
+		['Seat Belts', safety.seatBeltsAll],
+		['Pretensioner', safety.pretensioner],
+		['ABS', safety.abs],
+		['ESC', safety.esc],
+		['Traction Control', safety.tractionControl],
+		['Brake System', safety.brakeSystemType]
+	].filter(([, value]) => value);
 
 	if (features.length === 0) return '';
 
 	return `
 		<div class="section">
-			<div class="section-header">
-				<div class="section-icon">🛡️</div>
-				<div class="section-title">Safety Features</div>
-			</div>
-			<div class="feature-list">
-				${features.map(feat => `
-					<div class="feature-item">
-						<div class="feature-icon">${feat.icon}</div>
-						<span>${feat.label}: ${feat.value}</span>
-					</div>
+			<div class="section-title">Safety Features</div>
+			<table class="data-table">
+				${features.map(([label, value]) => `
+					<tr>
+						<td>${label}</td>
+						<td>${value}</td>
+					</tr>
 				`).join('')}
-			</div>
+			</table>
 		</div>
 	`;
 }
 
-/**
- * Build manufacturing section
- */
 function buildManufacturingSection(data: ComprehensiveVehicleData): string {
 	const mfg = data.manufacturing;
 	const specs = [
-		{ label: 'Manufacturer', value: data.identification.manufacturer },
-		{ label: 'Plant Location', value: [mfg.plantCity, mfg.plantState, mfg.plantCountry].filter(Boolean).join(', ') },
-		{ label: 'Plant Company', value: mfg.plantCompanyName },
-		{ label: 'Destination Market', value: data.market.destinationMarket }
-	].filter(spec => spec.value);
+		['Manufacturer', data.identification.manufacturer],
+		['Plant City', mfg.plantCity],
+		['Plant State', mfg.plantState],
+		['Plant Country', mfg.plantCountry],
+		['Plant Company', mfg.plantCompanyName],
+		['Destination Market', data.market.destinationMarket]
+	].filter(([, value]) => value);
 
 	if (specs.length === 0) return '';
 
 	return `
 		<div class="section">
-			<div class="section-header">
-				<div class="section-icon">🏭</div>
-				<div class="section-title">Manufacturing Information</div>
-			</div>
-			<div class="info-grid">
-				${specs.map(spec => `
-					<div class="info-card">
-						<div class="info-label">${spec.label}</div>
-						<div class="info-value">${spec.value}</div>
-					</div>
+			<div class="section-title">Manufacturing Information</div>
+			<table class="data-table">
+				${specs.map(([label, value]) => `
+					<tr>
+						<td>${label}</td>
+						<td>${value}</td>
+					</tr>
 				`).join('')}
-			</div>
+			</table>
 		</div>
 	`;
 }
 
-/**
- * Build recalls section
- */
 function buildRecallsSection(data: ComprehensiveVehicleData): string {
 	if (data.recalls.length === 0) {
 		return `
 			<div class="section">
-				<div class="section-header">
-					<div class="section-icon">✓</div>
-					<div class="section-title">Safety Recalls</div>
-				</div>
-				<div class="info-card">
-					<div class="info-value" style="color: #10b981;">
-						✓ No open recalls found for this vehicle
+				<div class="section-title">Safety Recalls</div>
+				<div class="info-box">
+					<div class="info-box-content" style="color: #10b981; font-weight: 600;">
+						✓ No open safety recalls found for this vehicle
 					</div>
 				</div>
 			</div>
@@ -248,23 +211,17 @@ function buildRecallsSection(data: ComprehensiveVehicleData): string {
 
 	return `
 		<div class="section">
-			<div class="section-header">
-				<div class="section-icon">⚠️</div>
-				<div class="section-title">Safety Recalls (${data.recalls.length})</div>
-			</div>
+			<div class="section-title">Safety Recalls (${data.recalls.length} Found)</div>
 			${data.recalls.map(recall => `
-				<div class="recall-alert">
-					<div class="recall-alert-header">
-						<div class="recall-icon">!</div>
-						<div class="recall-title">${recall.component}</div>
-					</div>
+				<div class="recall-box">
+					<div class="recall-header">${recall.component}</div>
 					<div class="recall-content">
 						<strong>Issue:</strong> ${recall.summary}<br>
 						<strong>Consequence:</strong> ${recall.consequence}<br>
 						<strong>Remedy:</strong> ${recall.remedy}
 					</div>
 					<div class="recall-meta">
-						Campaign: ${recall.nhtsaCampaignNumber} | Reported: ${recall.reportReceivedDate}
+						Campaign #${recall.nhtsaCampaignNumber} | Reported: ${recall.reportReceivedDate}
 					</div>
 				</div>
 			`).join('')}
@@ -272,47 +229,34 @@ function buildRecallsSection(data: ComprehensiveVehicleData): string {
 	`;
 }
 
-/**
- * Build NCS valuation section (optional)
- */
 function buildValuationSection(options: ReportOptions): string {
 	if (!options.includeNCSValuation || !options.cifUsd) return '';
 
 	return `
 		<div class="section">
-			<div class="section-header">
-				<div class="section-icon">💰</div>
-				<div class="section-title">NCS Valuation</div>
-			</div>
-			<div class="info-grid">
-				<div class="info-card">
-					<div class="info-label">CIF Value (USD)</div>
-					<div class="info-value info-value-large">$${options.cifUsd.toLocaleString()}</div>
-				</div>
-				<div class="info-card">
-					<div class="info-label">CIF Value (NGN)</div>
-					<div class="info-value info-value-large">₦${options.cifNgn?.toLocaleString()}</div>
-				</div>
-				<div class="info-card">
-					<div class="info-label">CBN Exchange Rate</div>
-					<div class="info-value">₦${options.cbnRate?.toLocaleString()}/USD</div>
-				</div>
-				<div class="info-card">
-					<div class="info-label">Confidence Level</div>
-					<div class="info-value">
-						<span class="badge badge-${options.confidence === 'High' ? 'success' : options.confidence === 'Medium' ? 'warning' : 'info'}">
-							${options.confidence}
-						</span>
-					</div>
-				</div>
-			</div>
+			<div class="section-title">NCS Valuation</div>
+			<table class="data-table">
+				<tr>
+					<td>CIF Value (USD)</td>
+					<td>$${options.cifUsd.toLocaleString()}</td>
+				</tr>
+				<tr>
+					<td>CIF Value (NGN)</td>
+					<td>₦${options.cifNgn?.toLocaleString()}</td>
+				</tr>
+				<tr>
+					<td>CBN Exchange Rate</td>
+					<td>₦${options.cbnRate?.toLocaleString()}/USD</td>
+				</tr>
+				<tr>
+					<td>Confidence Level</td>
+					<td><span class="badge badge-${options.confidence === 'exact' ? 'success' : 'warning'}">${options.confidence}</span></td>
+				</tr>
+			</table>
 		</div>
 	`;
 }
 
-/**
- * Build duty breakdown section (optional)
- */
 function buildDutySection(options: ReportOptions): string {
 	if (!options.includeDutyBreakdown || !options.dutyBreakdown) return '';
 
@@ -320,10 +264,7 @@ function buildDutySection(options: ReportOptions): string {
 
 	return `
 		<div class="section">
-			<div class="section-header">
-				<div class="section-icon">📊</div>
-				<div class="section-title">Nigerian Import Duty Breakdown</div>
-			</div>
+			<div class="section-title">Nigerian Import Duty Breakdown</div>
 			<table class="duty-table">
 				<tr>
 					<td>Import Duty (35%)</td>
@@ -358,15 +299,17 @@ function buildDutySection(options: ReportOptions): string {
 	`;
 }
 
-/**
- * Build complete HTML report
- */
 export function buildReportHTML(
 	data: ComprehensiveVehicleData,
 	options: ReportOptions = {}
 ): string {
 	const vehicleName = `${data.identification.modelYear} ${data.identification.make} ${data.identification.model}`;
 	const trim = data.identification.trim ? ` ${data.identification.trim}` : '';
+	const reportDate = new Date().toLocaleDateString('en-NG', { 
+		year: 'numeric', 
+		month: 'long', 
+		day: 'numeric' 
+	});
 
 	return `
 <!DOCTYPE html>
@@ -379,15 +322,21 @@ export function buildReportHTML(
 	<div class="page">
 		<!-- Header -->
 		<div class="header">
-			<div class="brand">
-				<div class="logo">Moto<span class="logo-accent">Check</span></div>
+			<div class="header-content">
+				<div class="brand-section">
+					<div class="logo">MotoCheck</div>
+					<div class="tagline">Comprehensive Vehicle History Report</div>
+				</div>
+				<div class="report-meta">
+					<div><strong>Report Date:</strong> ${reportDate}</div>
+					<div><strong>Report ID:</strong> ${data.identification.vin.slice(-8).toUpperCase()}</div>
+				</div>
 			</div>
-			<div class="tagline">Comprehensive Vehicle Report</div>
 		</div>
 
-		<!-- Vehicle Hero -->
-		<div class="vehicle-hero">
-			<div class="vehicle-title">${vehicleName}${trim}</div>
+		<!-- Vehicle Title Bar -->
+		<div class="vehicle-title-bar">
+			<div class="vehicle-name">${vehicleName}${trim}</div>
 			<div class="vin-display">VIN: ${data.identification.vin}</div>
 		</div>
 
@@ -410,22 +359,20 @@ export function buildReportHTML(
 				<div class="footer-section">
 					<h4>Report Information</h4>
 					<p>
-						<strong>Generated:</strong> ${new Date().toLocaleString('en-NG')}<br>
-						<strong>Report ID:</strong> ${data.identification.vin.slice(-8)}<br>
-						<strong>Data Source:</strong> NHTSA Vehicle Database
+						This report was generated on ${reportDate} using data from the National Highway Traffic Safety Administration (NHTSA) 
+						Vehicle Product Information Catalog and other public sources.
 					</p>
 				</div>
 				<div class="footer-section">
 					<h4>Disclaimer</h4>
 					<p>
-						This report is based on data from NHTSA and other public sources. 
-						Information accuracy depends on source data quality. 
-						Always verify critical details independently.
+						Information accuracy depends on source data quality. This report should be used as a reference guide. 
+						Always verify critical details independently before making purchase decisions.
 					</p>
 				</div>
 			</div>
 			<div class="footer-brand">
-				<strong>MotoCheck</strong> - Professional Vehicle Reports for Nigeria
+				<strong>MotoCheck</strong> - Professional Vehicle Reports for Nigeria | www.motocheck.ng
 			</div>
 		</div>
 	</div>
