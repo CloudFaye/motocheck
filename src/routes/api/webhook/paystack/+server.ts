@@ -4,7 +4,7 @@ import { handlePaystackWebhook } from '$lib/server/webhook-handler';
 import { db } from '$lib/server/db';
 import { orders, reports, lookups } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateReport } from '$lib/server/report-generator';
+import { generateVehicleReport } from '$lib/server/reports/generator';
 import { uploadReport } from '$lib/server/storage-service';
 import { sendReport } from '$lib/server/email-service';
 
@@ -91,32 +91,28 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const lookupData = lookup[0];
-		const decoded = lookupData.decodedJson as any;
+		const vehicleData = lookupData.decodedJson as any;
 		const duty = lookupData.dutyJson as any;
 
 		console.log('📄 Generating report for VIN:', lookupData.vin);
 
-		// Generate report
-		const report = await generateReport({
-			vin: lookupData.vin,
-			make: decoded.make,
-			model: decoded.model,
-			year: decoded.year,
-			engine: decoded.engine,
-			bodyClass: decoded.bodyClass,
-			plantCountry: decoded.plantCountry,
+		// Generate report with comprehensive vehicle data
+		const report = await generateVehicleReport(vehicleData, {
+			includeNCSValuation: true,
+			includeDutyBreakdown: true,
 			cifUsd: Number(lookupData.ncsValuationUsd),
 			cifNgn: duty.cifNgn,
 			confidence: lookupData.valuationConfidence,
-			importDuty: duty.importDuty,
-			surcharge: duty.surcharge,
-			nacLevy: duty.nacLevy,
-			ciss: duty.ciss,
-			etls: duty.etls,
-			vat: duty.vat,
-			totalDutyNgn: duty.totalDutyNgn,
-			cbnRate: Number(lookupData.cbnRateNgn),
-			rateTimestamp: lookupData.rateFetchedAt
+			dutyBreakdown: {
+				importDuty: duty.importDuty,
+				surcharge: duty.surcharge,
+				nacLevy: duty.nacLevy,
+				ciss: duty.ciss,
+				etls: duty.etls,
+				vat: duty.vat,
+				totalDutyNgn: duty.totalDutyNgn
+			},
+			cbnRate: Number(lookupData.cbnRateNgn)
 		});
 
 		console.log('✅ Report generated, uploading to R2...');

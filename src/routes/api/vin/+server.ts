@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { checkRateLimit } from '$lib/server/rate-limiter';
-import { decodeVIN } from '$lib/server/nhtsa-decoder';
+import { decodeVehicle } from '$lib/server/vehicle/decoder';
 import { lookupValuation } from '$lib/server/ncs-valuator';
 import { calculateDuty } from '$lib/server/duty-engine';
 import { getCurrentRate } from '$lib/server/exchange-rate-manager';
@@ -50,29 +50,33 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		return json({
 			lookupId: lookup.id,
 			vin: lookup.vin,
-			make: decoded.make,
-			model: decoded.model,
-			year: decoded.year,
-			engine: decoded.engine,
-			bodyClass: decoded.bodyClass,
-			plantCountry: decoded.plantCountry,
-			fuelType: decoded.fuelType,
+			make: decoded.identification?.make || decoded.make,
+			model: decoded.identification?.model || decoded.model,
+			year: decoded.identification?.modelYear || decoded.year,
+			engine: decoded.engine?.model || decoded.engine,
+			bodyClass: decoded.body?.bodyClass || decoded.bodyClass,
+			plantCountry: decoded.manufacturing?.plantCountry || decoded.plantCountry,
+			fuelType: decoded.engine?.fuelTypePrimary || decoded.fuelType,
 			dutyEstimate: duty.totalDutyNgn,
 			confidence: lookup.valuationConfidence
 		});
 	}
 
 	try {
-		// Decode VIN
-		const decoded = await decodeVIN(normalizedVin);
-		const valuation = lookupValuation(decoded.year, decoded.make, decoded.model);
+		// Decode VIN with comprehensive data
+		const vehicleData = await decodeVehicle(normalizedVin);
+		const valuation = lookupValuation(
+			vehicleData.identification.modelYear,
+			vehicleData.identification.make,
+			vehicleData.identification.model
+		);
 		const rate = getCurrentRate();
 		const duty = calculateDuty(valuation.cifUsd, rate.cbnRate);
 
-		// Store in cache
+		// Store comprehensive data in cache
 		const [inserted] = await db.insert(lookups).values({
 			vin: normalizedVin,
-			decodedJson: decoded,
+			decodedJson: vehicleData, // Store full comprehensive data
 			ncsValuationUsd: String(valuation.cifUsd),
 			valuationConfidence: valuation.confidence,
 			dutyJson: duty,
@@ -83,13 +87,13 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		return json({
 			lookupId: inserted.id,
 			vin: normalizedVin,
-			make: decoded.make,
-			model: decoded.model,
-			year: decoded.year,
-			engine: decoded.engine,
-			bodyClass: decoded.bodyClass,
-			plantCountry: decoded.plantCountry,
-			fuelType: decoded.fuelType,
+			make: vehicleData.identification.make,
+			model: vehicleData.identification.model,
+			year: vehicleData.identification.modelYear,
+			engine: vehicleData.engine.model || vehicleData.engine.configuration,
+			bodyClass: vehicleData.body.bodyClass,
+			plantCountry: vehicleData.manufacturing.plantCountry,
+			fuelType: vehicleData.engine.fuelTypePrimary,
 			dutyEstimate: duty.totalDutyNgn,
 			confidence: valuation.confidence
 		});
