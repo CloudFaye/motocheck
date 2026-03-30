@@ -64,8 +64,8 @@ bot.on('text', async (ctx) => {
 async function handleVinCheck(ctx: any, vin: string) {
 	const chatId = String(ctx.chat.id);
 
-	// Rate limiting
-	const rateLimit = checkRateLimit(chatId, 3, 3600);
+	// Rate limiting (separate namespace for Telegram)
+	const rateLimit = checkRateLimit(`telegram:${chatId}`, 5, 3600);
 	if (!rateLimit.allowed) {
 		return ctx.reply(
 			`⏳ Rate limit exceeded. Please try again in ${Math.ceil(rateLimit.retryAfter / 60)} minutes.`
