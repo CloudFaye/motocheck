@@ -1,5 +1,4 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
 import { handlePaystackWebhook } from '$lib/server/webhook-handler';
 import { db } from '$lib/server/db';
 import { orders, reports, lookups } from '$lib/server/db/schema';
@@ -7,6 +6,19 @@ import { eq } from 'drizzle-orm';
 import { generateVehicleReport } from '$lib/server/reports/generator';
 import { uploadReport } from '$lib/server/storage-service';
 import { sendReport } from '$lib/server/email-service';
+import type { ComprehensiveVehicleData } from '$lib/server/vehicle/types';
+import type { RequestHandler } from '@sveltejs/kit';
+
+interface DutyData {
+	cifNgn: number;
+	importDuty: number;
+	surcharge: number;
+	nacLevy: number;
+	ciss: number;
+	etls: number;
+	vat: number;
+	totalDutyNgn: number;
+}
 
 export const POST: RequestHandler = async ({ request }) => {
 	const signature = request.headers.get('x-paystack-signature') || '';
@@ -91,8 +103,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const lookupData = lookup[0];
-		const vehicleData = lookupData.decodedJson as any;
-		const duty = lookupData.dutyJson as any;
+		const vehicleData = lookupData.decodedJson as ComprehensiveVehicleData;
+		const duty = lookupData.dutyJson as DutyData;
 
 		console.log('📄 Generating report for VIN:', lookupData.vin);
 
