@@ -62,7 +62,8 @@ describe('Database Schema', () => {
 			expect(columns).toContain('id');
 			expect(columns).toContain('orderId');
 			expect(columns).toContain('r2Key');
-			expect(columns).toContain('pdfHash');
+			expect(columns).toContain('documentHash');
+			expect(columns).toContain('format');
 			expect(columns).toContain('signedUrl');
 			expect(columns).toContain('sentAt');
 			expect(columns).toContain('createdAt');
@@ -74,9 +75,9 @@ describe('Database Schema', () => {
 			expect(orderIdColumn.isUnique).toBe(true);
 		});
 
-		it('should have pdfHash column with length 64', () => {
-			const pdfHashColumn = reports.pdfHash;
-			expect(pdfHashColumn).toBeDefined();
+		it('should have documentHash column with length 64', () => {
+			const documentHashColumn = reports.documentHash;
+			expect(documentHashColumn).toBeDefined();
 		});
 	});
 });

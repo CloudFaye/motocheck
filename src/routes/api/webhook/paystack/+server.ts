@@ -132,7 +132,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Upload to R2
 		const reportId = crypto.randomUUID();
-		const storage = await uploadReport(reportId, report.pdfBuffer);
+		const storage = await uploadReport(reportId, report.buffer, report.format);
 
 		console.log('✅ Report uploaded:', storage.r2Key);
 
@@ -141,7 +141,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			id: reportId,
 			orderId: orderRecord.id,
 			r2Key: storage.r2Key,
-			pdfHash: report.hash,
+			documentHash: report.hash,
+			format: report.format,
 			signedUrl: '', // No longer using signed URLs
 			sentAt: new Date()
 		});
@@ -154,15 +155,16 @@ export const POST: RequestHandler = async ({ request }) => {
 		// Send email or Telegram
 		if (orderRecord.source === 'web') {
 			console.log('📧 Sending email notification');
-			await sendReport(orderRecord.email, reportId, lookupData.vin, downloadUrl);
+			await sendReport(orderRecord.email, reportId, lookupData.vin, downloadUrl, report.format);
 			console.log('✅ Email sent');
 		} else if (orderRecord.source === 'telegram' && orderRecord.telegramChatId) {
 			console.log('📱 Sending to Telegram');
-			// Send PDF to Telegram
+			// Send document to Telegram with correct extension
 			const { bot } = await import('../../../../telegram-bot');
+			const extension = report.format === 'docx' ? 'docx' : 'pdf';
 			await bot.telegram.sendDocument(orderRecord.telegramChatId, {
-				source: report.pdfBuffer,
-				filename: `vin-report-${lookupData.vin}.pdf`
+				source: report.buffer,
+				filename: `vin-report-${lookupData.vin}.${extension}`
 			});
 			console.log('✅ Telegram message sent');
 		}

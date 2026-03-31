@@ -33,12 +33,13 @@ export const orders = pgTable('orders', {
 	status: varchar('status', { length: 20 }).notNull(),
 	source: varchar('source', { length: 10 }).notNull(),
 	telegramChatId: varchar('telegram_chat_id'),
+	reportFormat: varchar('report_format', { length: 10 }).notNull().default('docx'),
 	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 	paidAt: timestamp('paid_at', { withTimezone: true })
 });
 
 /**
- * Reports table - Stores generated PDF report metadata
+ * Reports table - Stores generated report metadata (PDF or DOCX)
  * One-to-one relationship with orders (enforced by unique constraint)
  */
 export const reports = pgTable('reports', {
@@ -48,7 +49,8 @@ export const reports = pgTable('reports', {
 		.references(() => orders.id)
 		.unique(),
 	r2Key: varchar('r2_key').notNull(),
-	pdfHash: varchar('pdf_hash', { length: 64 }).notNull(),
+	documentHash: varchar('document_hash', { length: 64 }).notNull(),
+	format: varchar('format', { length: 10 }).notNull().default('pdf'),
 	signedUrl: varchar('signed_url').notNull(),
 	sentAt: timestamp('sent_at', { withTimezone: true }).notNull(),
 	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()

@@ -51,13 +51,20 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	}
 
 	try {
-		// Fetch PDF from R2
-		const pdfBuffer = await getReport(report.r2Key);
+		// Fetch document from R2
+		const documentBuffer = await getReport(report.r2Key);
+		
+		// Determine MIME type and filename based on format
+		const format = report.format || 'pdf';
+		const mimeType = format === 'docx' 
+			? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+			: 'application/pdf';
+		const extension = format === 'docx' ? 'docx' : 'pdf';
 
-		return new Response(pdfBuffer as BodyInit, {
+		return new Response(documentBuffer as BodyInit, {
 			headers: {
-				'Content-Type': 'application/pdf',
-				'Content-Disposition': `attachment; filename="vehicle-report-${order.lookupId}.pdf"`,
+				'Content-Type': mimeType,
+				'Content-Disposition': `attachment; filename="vehicle-report-${order.lookupId}.${extension}"`,
 				'Cache-Control': 'private, max-age=3600'
 			}
 		});

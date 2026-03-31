@@ -349,10 +349,10 @@ export function buildEmptySection(title: string): string {
 	return `
 		<div class="section">
 			<div class="section-title">${title}</div>
-			<div class="info-box">
-				<div class="info-box-content no-data">
-					No data available for this section
-				</div>
+			<div class="empty-state">
+				<div class="empty-state-icon">📋</div>
+				<div class="empty-state-title">Data Not Available</div>
+				<div class="empty-state-message">This information will be displayed when available from our data sources</div>
 			</div>
 		</div>
 	`;

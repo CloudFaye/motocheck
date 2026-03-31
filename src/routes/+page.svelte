@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolveRoute } from '$app/paths';
 	import { sanitizeVIN, getVINError } from '$lib/vin-validator';
 	import { toast } from 'svelte-sonner';
 
@@ -38,7 +39,8 @@
 			}
 
 			const data = await res.json();
-			await goto(`/preview/${data.lookupId}`);
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			await goto(resolveRoute('/preview/[lookupId]', { lookupId: data.lookupId }));
 		} catch {
 			toast.error('Network Error');
 			loading = false;
@@ -144,7 +146,7 @@
 		</svg>
 		<!-- Gold gradient wash, bottom-right -->
 		<div
-			class="absolute bottom-0 right-0 w-[600px] h-[500px] bg-gradient-to-tl from-gold-100/50 via-transparent to-transparent rounded-full blur-3xl"
+			class="absolute bottom-0 right-0 w-[600px] h-[500px] bg-linear-to-tl from-gold-100/50 via-transparent to-transparent rounded-full blur-3xl"
 		></div>
 	</div>
 
@@ -153,16 +155,7 @@
 
 			<!-- Left: copy + form -->
 			<div class="animate-fade-up">
-				<!-- Eyebrow badge -->
-				<div
-					class="inline-flex items-center gap-2 mb-6 px-3 py-1.5 bg-surface-subtle border border-surface-border rounded-full"
-				>
-					<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-soft"></span>
-					<span class="text-xs font-medium font-sans text-ink-muted"
-						>Trusted by 10,000+ importers across Nigeria</span
-					>
-				</div>
-
+			
 				<h1 class="heading-display mb-6">
 					Know exactly what<br />
 					<em class="not-italic text-gold-500">you'll pay</em> before<br />
@@ -202,7 +195,7 @@
 						</span>
 					</div>
 
-					<p class="mt-2 text-xs text-ink-faint font-sans">
+					<p class="mt-2 text-xs text-ink-faint">
 						Found on your dashboard, door jamb, or registration document.
 					</p>
 
@@ -241,8 +234,8 @@
 
 					<!-- Trust row -->
 					<div class="flex items-center gap-5 mt-4">
-						{#each ['Instant delivery', 'Paystack secured', '₦2,500 flat fee'] as trust}
-							<span class="flex items-center gap-1.5 text-xs text-ink-muted font-sans">
+						{#each ['Instant delivery', 'Paystack secured', '₦2,500 flat fee'] as trust (trust)}
+							<span class="flex items-center gap-1.5 text-xs text-ink-muted">
 								<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
 									<circle cx="6" cy="6" r="5" stroke="#10b981" stroke-width="1.2" />
 									<path
@@ -264,10 +257,10 @@
 			<div class="hidden lg:flex items-center justify-center animate-fade-up animate-delay-200">
 				<div class="relative w-full max-w-sm">
 					<!-- Sample report preview card -->
-					<div class="card p-0 overflow-hidden">
+					<div class="card m-0 p-0 overflow-hidden">
 						<!-- Card header -->
 						<div
-							class="flex items-center justify-between px-6 py-4 border-b border-surface-border bg-surface-warm"
+							class="flex items-center justify-between px-3 py-3 border-b border-surface-border bg-surface-warm"
 						>
 							<div class="flex items-center gap-2.5">
 								<div class="w-7 h-7 rounded-md bg-ink flex items-center justify-center">
@@ -294,7 +287,7 @@
 								</div>
 								<div>
 									<p class="text-xs font-semibold font-sans text-ink">Vehicle Report</p>
-									<p class="text-2xs text-ink-faint font-sans font-mono">1HGBH41JXMN109186</p>
+									<p class="text-2xs text-ink-faint  font-mono">1HGBH41JXMN109186</p>
 								</div>
 							</div>
 							<span class="badge-green">Verified</span>
@@ -317,8 +310,8 @@
 									Import Duty Summary
 								</p>
 								<div class="space-y-1.5">
-									{#each [{ label: 'CIF Value (USD)', value: '$12,500' }, { label: 'Import Duty (35%)', value: '₦15,312,500' }, { label: 'VAT (7.5%)', value: '₦2,109,375' }, { label: 'Port Charges', value: '₦185,000' }] as row}
-										<div class="flex justify-between text-xs font-sans">
+									{#each [{ label: 'CIF Value (USD)', value: '$12,500' }, { label: 'Import Duty (35%)', value: '₦15,312,500' }, { label: 'VAT (7.5%)', value: '₦2,109,375' }, { label: 'Port Charges', value: '₦185,000' }] as row (row.label)}
+										<div class="flex justify-between text-xs">
 											<span class="text-ink-muted">{row.label}</span>
 											<span class="font-medium text-ink tabular-nums">{row.value}</span>
 										</div>
@@ -338,7 +331,7 @@
 
 							<div class="flex items-center gap-2">
 								<svg
-									class="w-3.5 h-3.5 text-emerald-500 flex-shrink-0"
+									class="w-3.5 h-3.5 text-emerald-500 shrink-0"
 									viewBox="0 0 14 14"
 									fill="none"
 								>
@@ -381,7 +374,7 @@
 			<div
 				class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x divide-surface-border"
 			>
-				{#each [{ value: '10,000+', label: 'Reports generated' }, { value: '₦2,500', label: 'Flat fee, no hidden charges' }, { value: '<60s', label: 'Average delivery time' }, { value: '99.2%', label: 'Data accuracy rate' }] as stat}
+				{#each [{ value: '10,000+', label: 'Reports generated' }, { value: '₦2,500', label: 'Flat fee, no hidden charges' }, { value: '<60s', label: 'Average delivery time' }, { value: '99.2%', label: 'Data accuracy rate' }] as stat (stat.label)}
 					<div class="stat-item md:px-8 first:pl-0 last:pr-0 text-center md:text-left">
 						<span class="stat-value text-3xl">{stat.value}</span>
 						<span class="stat-label text-xs mt-0.5">{stat.label}</span>
@@ -410,16 +403,16 @@
 				class="hidden md:block absolute top-9 left-[20%] right-[20%] h-px bg-surface-border z-0"
 			></div>
 
-			{#each [{ n: '01', title: 'Enter your VIN', desc: 'Paste or type your 17-character VIN into the form. We validate it in real time against the NHTSA database.', icon: `<path d="M5 2h6l2 3H3L5 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><rect x="2" y="5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/>` }, { n: '02', title: 'Pay securely', desc: 'Complete your ₦2,500 payment via Paystack using any card, bank transfer, or USSD. Takes under 30 seconds.', icon: `<rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 7.5h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="10" r="1" fill="currentColor"/>` }, { n: '03', title: 'Get your report', desc: 'A detailed PDF report lands in your inbox instantly, covering specs, duty breakdown, recalls, and NCS valuation.', icon: `<rect x="3" y="2" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 5h4M6 7.5h4M6 10h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>` }] as step, i}
+			{#each [{ n: '01', title: 'Enter your VIN', desc: 'Paste or type your 17-character VIN into the form. We validate it in real time against the NHTSA database.', icon: `<path d="M5 2h6l2 3H3L5 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><rect x="2" y="5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/>` }, { n: '02', title: 'Pay securely', desc: 'Complete your ₦2,500 payment via Paystack using any card, bank transfer, or USSD. Takes under 30 seconds.', icon: `<rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 7.5h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="10" r="1" fill="currentColor"/>` }, { n: '03', title: 'Get your report', desc: 'A detailed PDF report lands in your inbox instantly, covering specs, duty breakdown, recalls, and NCS valuation.', icon: `<rect x="3" y="2" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 5h4M6 7.5h4M6 10h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>` }] as step (step.n)}
 				<div class="card-surface relative z-10">
 					<div class="flex items-start gap-4">
 						<div
-							class="w-9 h-9 rounded-xl border-2 border-gold-400 text-gold-500 flex items-center justify-center flex-shrink-0"
+							class="w-9 h-9 rounded-xl border-2 border-gold-400 text-gold-500 flex items-center justify-center shrink-0"
 						>
 							<span class="font-mono text-xs font-bold">{step.n}</span>
 						</div>
 						<div class="flex-1">
-							<h3 class="font-sans font-semibold text-ink text-base mb-2">{step.title}</h3>
+							<h3 class="font-semibold text-ink text-base mb-2">{step.title}</h3>
 							<p class="text-sm text-ink-muted leading-relaxed">{step.desc}</p>
 						</div>
 					</div>
@@ -446,7 +439,8 @@
 					We pull data from NHTSA, official NCS valuation tables, and OEM records so nothing is
 					left out of your purchasing decision.
 				</p>
-				<a href="/sample-report" class="btn-ghost">
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+				<a href="/sample-report" data-sveltekit-preload-data class="btn-ghost">
 					View a sample report
 					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
 						<path
@@ -462,10 +456,11 @@
 
 			<!-- Feature grid -->
 			<div class="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-				{#each inspects as item}
+				{#each inspects as item (item.title)}
 					<div class="card group transition-colors duration-300">
 						<div class="feature-icon">
 							<svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 								{@html item.icon}
 							</svg>
 						</div>
@@ -500,10 +495,10 @@
 			</p>
 
 			<!-- Pricing card -->
-			<div class="card max-w-sm mx-auto border-2 border-ink/[0.06] relative overflow-hidden">
+			<div class="card max-w-sm mx-auto border-2 border-ink/6 relative overflow-hidden">
 				<!-- Gold accent bar -->
 				<div
-					class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold-400 to-gold-300"
+					class="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-gold-400 to-gold-300"
 				></div>
 
 				<div class="pt-3">
@@ -514,10 +509,10 @@
 					<p class="text-xs text-ink-faint font-sans mb-8">per report · instant delivery</p>
 
 					<ul class="text-left space-y-3 mb-8">
-						{#each ['Full vehicle specifications', 'Line-by-line import duty calculation', 'NCS reference valuation', 'Active safety recall check', 'Manufacturing & origin details', 'Market compliance notes', 'PDF delivered to your email'] as feature}
-							<li class="flex items-center gap-3 text-sm font-sans text-ink-soft">
+						{#each ['Full vehicle specifications', 'Line-by-line import duty calculation', 'NCS reference valuation', 'Active safety recall check', 'Manufacturing & origin details', 'Market compliance notes', 'PDF delivered to your email'] as feature (feature)}
+							<li class="flex items-center gap-3 text-sm text-ink-soft">
 								<svg
-									class="w-4 h-4 text-emerald-500 flex-shrink-0"
+									class="w-4 h-4 text-emerald-500 shrink-0"
 									viewBox="0 0 16 16"
 									fill="none"
 								>
@@ -535,10 +530,11 @@
 						{/each}
 					</ul>
 
-					<a href="/#vin-form" class="btn-gold w-full justify-center py-4 text-sm">
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+					<a href="/#vin-form" data-sveltekit-preload-data class="btn-gold w-full justify-center py-4 text-sm">
 						Check a VIN Now — ₦2,500
 					</a>
-					<p class="text-xs text-ink-faint mt-3 font-sans">
+					<p class="text-xs text-ink-faint mt-3">
 						Secured by Paystack · All cards accepted
 					</p>
 				</div>
@@ -563,26 +559,27 @@
 		</div>
 
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-			{#each [{ initials: 'AO', name: 'Adebayo Okonkwo', location: 'Lagos', role: 'Private importer', quote: 'Saved me thousands. The duty calculation was exact — I used it to negotiate the final price with my clearing agent before the car even left the US.', stars: 5 }, { initials: 'CN', name: 'Chioma Nwosu', location: 'Abuja', role: 'Car dealer', quote: 'My customers ask about duties before they commit. I now send them a MotoCheck report at enquiry stage. It builds trust and closes deals faster.', stars: 5 }, { initials: 'EM', name: 'Emmanuel Musa', location: 'Port Harcourt', role: 'Fleet manager', quote: 'Bought three vehicles last quarter. MotoCheck caught an undisclosed recall on one — that alone was worth every kobo.', stars: 5 }] as t}
+			{#each [{ initials: 'AO', name: 'Adebayo Okonkwo', location: 'Lagos', role: 'Private importer', quote: 'Saved me thousands. The duty calculation was exact — I used it to negotiate the final price with my clearing agent before the car even left the US.', stars: 5 }, { initials: 'CN', name: 'Chioma Nwosu', location: 'Abuja', role: 'Car dealer', quote: 'My customers ask about duties before they commit. I now send them a MotoCheck report at enquiry stage. It builds trust and closes deals faster.', stars: 5 }, { initials: 'EM', name: 'Emmanuel Musa', location: 'Port Harcourt', role: 'Fleet manager', quote: 'Bought three vehicles last quarter. MotoCheck caught an undisclosed recall on one — that alone was worth every kobo.', stars: 5 }] as t (t.name)}
 				<div class="testimonial-card">
 					<!-- Stars -->
 					<div class="flex gap-0.5">
-						{#each Array(t.stars) as _}
+						<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
+						{#each Array(t.stars) as _star, starIndex (starIndex)}
 							<svg width="14" height="14" viewBox="0 0 14 14" fill="#d4943a">
 								<path d="M7 1l1.5 4H13L9.5 7.5l1.5 4L7 9.5 3 11.5l1.5-4L1 5h4.5z" />
 							</svg>
 						{/each}
 					</div>
 
-					<p class="text-sm text-ink-soft leading-relaxed font-sans flex-1">"{t.quote}"</p>
+					<p class="text-sm text-ink-soft leading-relaxed flex-1">"{t.quote}"</p>
 
 					<div class="flex items-center gap-3 pt-2 border-t border-surface-border">
 						<div class="testimonial-avatar text-xs">
 							{t.initials}
 						</div>
 						<div>
-							<p class="text-sm font-semibold font-sans text-ink">{t.name}</p>
-							<p class="text-xs text-ink-muted font-sans">{t.role} · {t.location}, Nigeria</p>
+							<p class="text-sm font-semibold text-ink">{t.name}</p>
+							<p class="text-xs text-ink-muted">{t.role} · {t.location}, Nigeria</p>
 						</div>
 					</div>
 				</div>
@@ -612,17 +609,17 @@
 			</div>
 
 			<div class="lg:col-span-3">
-				{#each faqs as faq, i}
+				{#each faqs as faq, faqIndex (faq.q)}
 					<div class="faq-item">
-						<button class="faq-trigger" onclick={() => toggleFaq(i)}>
+						<button class="faq-trigger" onclick={() => toggleFaq(faqIndex)}>
 							<span>{faq.q}</span>
 							<svg
 								width="18"
 								height="18"
 								viewBox="0 0 18 18"
 								fill="none"
-								class="flex-shrink-0 transition-transform duration-200"
-								class:rotate-45={openFaq === i}
+								class="shrink-0 transition-transform duration-200"
+								class:rotate-45={openFaq === faqIndex}
 							>
 								<path
 									d="M9 4v10M4 9h10"
@@ -632,7 +629,7 @@
 								/>
 							</svg>
 						</button>
-						{#if openFaq === i}
+						{#if openFaq === faqIndex}
 							<div class="faq-content animate-fade-in">
 								{faq.a}
 							</div>
@@ -666,7 +663,8 @@
 		</p>
 
 		<div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-			<a href="/#vin-form" class="btn-gold py-4 px-8 text-base">
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+			<a href="/#vin-form" data-sveltekit-preload-data class="btn-gold py-4 px-8 text-base">
 				Check Your VIN — ₦2,500
 				<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
 					<path
@@ -678,9 +676,11 @@
 					/>
 				</svg>
 			</a>
+			<!-- eslint-disable svelte/no-navigation-without-resolve -->
 			<a
 				href="/sample-report"
-				class="inline-flex items-center gap-2 text-sm font-medium font-sans text-white transition-colors"
+				data-sveltekit-preload-data
+				class="inline-flex items-center gap-2 text-sm font-medium text-white transition-colors"
 			>
 				View a sample report first
 				<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -696,8 +696,8 @@
 		</div>
 
 		<div class="flex items-center justify-center gap-6 mt-8">
-			{#each ['Instant delivery', 'Paystack secured', 'NHTSA verified data'] as item}
-				<span class="flex items-center gap-1.5 text-xs text-white/40 font-sans">
+			{#each ['Instant delivery', 'Paystack secured', 'NHTSA verified data'] as item (item)}
+				<span class="flex items-center gap-1.5 text-xs text-white/40">
 					<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
 						<circle cx="6" cy="6" r="5" stroke="#10b981" stroke-width="1.2" />
 						<path

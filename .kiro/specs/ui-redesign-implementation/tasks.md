@@ -13,17 +13,17 @@
 ### 2. Application Stylesheet Migration
 - [-] 2.1 Replace `src/routes/layout.css` with content from `ui-improv/app.css`
   - [ ] 2.1.1 Backup existing `layout.css` content
-  - [~] 2.1.2 Copy new CSS with @layer components
-  - [~] 2.1.3 Verify all custom component classes (btn-gold, card, input-field, etc.)
-  - [~] 2.1.4 Verify Google Fonts imports (Instrument Serif, DM Sans)
-  - [~] 2.1.5 Test stylesheet loads without errors
+  - [ ] 2.1.2 Copy new CSS with @layer components
+  - [ ] 2.1.3 Verify all custom component classes (btn-gold, card, input-field, etc.)
+  - [ ] 2.1.4 Verify Google Fonts imports (Instrument Serif, DM Sans)
+  - [ ] 2.1.5 Test stylesheet loads without errors
 
 ### 3. Font Loading Verification
 - [-] 3.1 Verify Google Fonts load correctly
-  - [~] 3.1.1 Check Instrument Serif loads for headings
-  - [~] 3.1.2 Check DM Sans loads for body text
-  - [~] 3.1.3 Verify font fallbacks work
-  - [~] 3.1.4 Test font rendering in different browsers
+  - [ ] 3.1.1 Check Instrument Serif loads for headings
+  - [ ] 3.1.2 Check DM Sans loads for body text
+  - [ ] 3.1.3 Verify font fallbacks work
+  - [ ] 3.1.4 Test font rendering in different browsers
 
 ## Phase 2: Layout Component Migration
 
@@ -37,7 +37,7 @@
   - [ ] 4.1.6 Test navigation on desktop and mobile
 
 ### 5. Footer Component Update
-- [~] 5.1 Update `src/routes/+layout.svelte` footer section
+- [ ] 5.1 Update `src/routes/+layout.svelte` footer section
   - [ ] 5.1.1 Implement 4-column footer layout
   - [ ] 5.1.2 Add company information column
   - [ ] 5.1.3 Add quick links column
@@ -47,7 +47,7 @@
   - [ ] 5.1.7 Test footer responsiveness
 
 ### 6. Layout Integration
-- [~] 6.1 Integrate navigation and footer into layout
+- [ ] 6.1 Integrate navigation and footer into layout
   - [ ] 6.1.1 Update CSS import to reference `./layout.css`
   - [ ] 6.1.2 Migrate {@render children()} syntax
   - [ ] 6.1.3 Test layout renders correctly
@@ -67,28 +67,28 @@
   - [ ] 7.1.7 Test error handling and validation messages
 
 ### 8. Stats Bar Implementation
-- [~] 8.1 Add stats bar section
+- [ ] 8.1 Add stats bar section
   - [ ] 8.1.1 Implement 4-stat grid layout
   - [ ] 8.1.2 Add stat cards (Reports Generated, Trusted Users, etc.)
   - [ ] 8.1.3 Style with card component class
   - [ ] 8.1.4 Test responsiveness
 
 ### 9. How It Works Section
-- [~] 9.1 Add "How It Works" section
+- [ ] 9.1 Add "How It Works" section
   - [ ] 9.1.1 Implement 3-step process layout
   - [ ] 9.1.2 Add step cards with icons
   - [ ] 9.1.3 Add step descriptions
   - [ ] 9.1.4 Test animations and transitions
 
 ### 10. Features Grid Implementation
-- [~] 10.1 Add features grid section
+- [ ] 10.1 Add features grid section
   - [ ] 10.1.1 Implement 3-column feature grid
   - [ ] 10.1.2 Add feature cards (Comprehensive Data, Instant Reports, etc.)
   - [ ] 10.1.3 Add feature icons and descriptions
   - [ ] 10.1.4 Test grid responsiveness
 
 ### 11. Pricing Section Implementation
-- [~] 11.1 Add pricing section
+- [ ] 11.1 Add pricing section
   - [ ] 11.1.1 Implement pricing card layout
   - [ ] 11.1.2 Add pricing details (₦5,000 per report)
   - [ ] 11.1.3 Add "What's Included" list
@@ -96,21 +96,21 @@
   - [ ] 11.1.5 Test pricing card responsiveness
 
 ### 12. Testimonials Section Implementation
-- [~] 12.1 Add testimonials section
+- [ ] 12.1 Add testimonials section
   - [ ] 12.1.1 Implement testimonial grid layout
   - [ ] 12.1.2 Add testimonial cards with quotes
   - [ ] 12.1.3 Add customer names and roles
   - [ ] 12.1.4 Test testimonial card styling
 
 ### 13. FAQ Section Implementation
-- [~] 13.1 Add FAQ accordion section
+- [ ] 13.1 Add FAQ accordion section
   - [ ] 13.1.1 Implement FAQ accordion with Svelte 5 $state
   - [ ] 13.1.2 Add FAQ items with questions and answers
   - [ ] 13.1.3 Implement expand/collapse functionality
   - [ ] 13.1.4 Test accordion interactions
 
 ### 14. Final CTA Section Implementation
-- [~] 14.1 Add final CTA section
+- [ ] 14.1 Add final CTA section
   - [ ] 14.1.1 Implement dark background (bg-ink) section
   - [ ] 14.1.2 Add CTA headline and description
   - [ ] 14.1.3 Add "Get Your Report" button
@@ -131,7 +131,7 @@
   - [ ] 15.1.9 Test report rendering on desktop and mobile
 
 ### 16. Sample Report Data Integration
-- [~] 16.1 Integrate sample data
+- [ ] 16.1 Integrate sample data
   - [ ] 16.1.1 Add sample vehicle data (2019 Toyota Camry)
   - [ ] 16.1.2 Add sample specifications
   - [ ] 16.1.3 Add sample safety ratings

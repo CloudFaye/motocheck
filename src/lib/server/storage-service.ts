@@ -13,24 +13,35 @@ const s3Client = new S3Client({
 export interface UploadResult {
 	r2Key: string;
 	reportId: string;
+	format: 'pdf' | 'docx';
 }
 
-export async function uploadReport(reportId: string, pdfBuffer: Buffer): Promise<UploadResult> {
+export async function uploadReport(
+	reportId: string, 
+	buffer: Buffer, 
+	format: 'pdf' | 'docx' = 'pdf'
+): Promise<UploadResult> {
 	const now = new Date();
 	const year = now.getFullYear();
 	const month = String(now.getMonth() + 1).padStart(2, '0');
-	const r2Key = `reports/${year}/${month}/${reportId}.pdf`;
+	
+	const extension = format === 'docx' ? '.docx' : '.pdf';
+	const mimeType = format === 'docx' 
+		? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+		: 'application/pdf';
+	
+	const r2Key = `reports/${year}/${month}/${reportId}${extension}`;
 
 	await s3Client.send(
 		new PutObjectCommand({
 			Bucket: config.R2_BUCKET_NAME,
 			Key: r2Key,
-			Body: pdfBuffer,
-			ContentType: 'application/pdf'
+			Body: buffer,
+			ContentType: mimeType
 		})
 	);
 
-	return { r2Key, reportId };
+	return { r2Key, reportId, format };
 }
 
 export async function getReport(r2Key: string): Promise<Buffer> {
