@@ -201,8 +201,8 @@ This implementation plan breaks down the DOCX report format feature into actiona
   - Verify generated DOCX files open in Microsoft Word
   - Ensure all tests pass, ask the user if questions arise
 
-- [ ] 10. Update storage service for format handling
-  - [ ] 10.1 Extend uploadReport function
+- [x] 10. Update storage service for format handling
+  - [x] 10.1 Extend uploadReport function
     - Accept format parameter ('pdf' | 'docx')
     - Use .docx extension for DOCX files
     - Use .pdf extension for PDF files
@@ -211,7 +211,7 @@ This implementation plan breaks down the DOCX report format feature into actiona
     - Add format metadata to S3 object
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
   
-  - [ ] 10.2 Extend getReport function
+  - [x] 10.2 Extend getReport function
     - Detect format from r2Key extension or metadata
     - Return format and mimeType along with buffer
     - _Requirements: 8.6_
@@ -224,8 +224,8 @@ This implementation plan breaks down the DOCX report format feature into actiona
     - **Property 6: Storage Retrieval Round-Trip**
     - **Validates: Requirements 8.6**
 
-- [ ] 11. Update email service for format handling
-  - [ ] 11.1 Extend sendReport function
+- [x] 11. Update email service for format handling
+  - [x] 11.1 Extend sendReport function
     - Accept format parameter ('pdf' | 'docx')
     - Set email subject with format indicator (📄 for DOCX, 📕 for PDF)
     - Include format name in email body

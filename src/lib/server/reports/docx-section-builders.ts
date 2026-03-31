@@ -258,7 +258,7 @@ export function buildRecallsSection(data: ComprehensiveVehicleData): (Paragraph 
 			new Paragraph({
 				children: [
 					new TextRun({
-						text: '✓ No open safety recalls found for this vehicle',
+						text: 'No open safety recalls found for this vehicle',
 						font: DOCX_STYLES.fonts.body,
 						size: 22,
 						color: DOCX_STYLES.colors.success,
@@ -435,7 +435,7 @@ export function buildOdometerHistorySection(odometer: OdometerHistory): (Paragra
 			new Paragraph({
 				children: [
 					new TextRun({
-						text: '⚠ Rollback Detected',
+						text: 'WARNING: Rollback Detected',
 						font: DOCX_STYLES.fonts.body,
 						size: 24,
 						color: DOCX_STYLES.colors.warning,
@@ -462,7 +462,7 @@ export function buildOdometerHistorySection(odometer: OdometerHistory): (Paragra
 		reading.date,
 		reading.mileage.toLocaleString(),
 		reading.source,
-		reading.verified ? '✓ Yes' : '✗ No'
+		reading.verified ? 'Yes' : 'No'
 	]);
 
 	content.push(
@@ -586,7 +586,7 @@ export function buildJunkSalvageSection(junkSalvage: JunkSalvageInfo): (Paragrap
 			new Paragraph({
 				children: [
 					new TextRun({
-						text: '⚠ Warning',
+						text: 'WARNING',
 						font: DOCX_STYLES.fonts.body,
 						size: 24,
 						color: DOCX_STYLES.colors.warning,
@@ -774,7 +774,7 @@ export function buildTheftHistorySection(theft: TheftHistory): (Paragraph | Tabl
 			new Paragraph({
 				children: [
 					new TextRun({
-						text: '⚠ STOLEN VEHICLE',
+						text: 'WARNING: STOLEN VEHICLE',
 						font: DOCX_STYLES.fonts.body,
 						size: 24,
 						color: DOCX_STYLES.colors.error,
@@ -828,7 +828,7 @@ export function buildTitleBrandsSection(titleBrands: TitleBrands): (Paragraph | 
 			new Paragraph({
 				children: [
 					new TextRun({
-						text: '⚠ Warning',
+						text: 'WARNING',
 						font: DOCX_STYLES.fonts.body,
 						size: 24,
 						color: DOCX_STYLES.colors.warning,

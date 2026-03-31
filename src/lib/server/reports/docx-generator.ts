@@ -466,10 +466,11 @@ export function buildEmptySectionDOCX(title: string): (Paragraph | Table)[] {
 		new Paragraph({
 			children: [
 				new TextRun({
-					text: '📋 Data Not Available',
+					text: 'Data Not Available',
 					font: DOCX_STYLES.fonts.body,
 					size: 24,
-					color: DOCX_STYLES.colors.secondary
+					color: DOCX_STYLES.colors.secondary,
+					bold: true
 				})
 			],
 			spacing: { before: 200, after: 100 },
@@ -585,7 +586,7 @@ export function safeRenderSection<T>(
 			new Paragraph({
 				children: [
 					new TextRun({
-						text: '⚠️ Error Loading Section',
+						text: 'ERROR: Section Loading Failed',
 						font: DOCX_STYLES.fonts.body,
 						size: 24,
 						color: DOCX_STYLES.colors.error,
