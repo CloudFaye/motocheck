@@ -107,10 +107,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		const vehicleData = lookupData.decodedJson as ComprehensiveVehicleData;
 		const duty = lookupData.dutyJson as DutyData;
 
-		console.log('📄 Generating report for VIN:', lookupData.vin);
+		console.log('📄 Generating reports for VIN:', lookupData.vin);
 
-		// Generate report with comprehensive vehicle data
-		const report = await generateVehicleReport(vehicleData, {
+		// Generate both PDF and DOCX reports
+		const reportOptions = {
 			includeNCSValuation: true,
 			includeDutyBreakdown: true,
 			cifUsd: Number(lookupData.ncsValuationUsd),
@@ -126,47 +126,76 @@ export const POST: RequestHandler = async ({ request }) => {
 				totalDutyNgn: duty.totalDutyNgn
 			},
 			cbnRate: Number(lookupData.cbnRateNgn)
-		});
+		};
 
-		console.log('✅ Report generated, uploading to R2...');
+		const [docxReport, pdfReport] = await Promise.all([
+			generateVehicleReport(vehicleData, { ...reportOptions, format: 'docx' }),
+			generateVehicleReport(vehicleData, { ...reportOptions, format: 'pdf' })
+		]);
 
-		// Upload to R2
-		const reportId = crypto.randomUUID();
-		const storage = await uploadReport(reportId, report.buffer, report.format);
+		console.log('✅ Both reports generated, uploading to R2...');
 
-		console.log('✅ Report uploaded:', storage.r2Key);
+		// Upload both reports to R2
+		const docxReportId = crypto.randomUUID();
+		const pdfReportId = crypto.randomUUID();
 
-		// Save report record
-		await db.insert(reports).values({
-			id: reportId,
-			orderId: orderRecord.id,
-			r2Key: storage.r2Key,
-			documentHash: report.hash,
-			format: report.format,
-			signedUrl: '', // No longer using signed URLs
-			sentAt: new Date()
-		});
+		const [docxStorage, pdfStorage] = await Promise.all([
+			uploadReport(docxReportId, docxReport.buffer, docxReport.format),
+			uploadReport(pdfReportId, pdfReport.buffer, pdfReport.format)
+		]);
 
-		console.log('✅ Report record saved');
+		console.log('✅ Reports uploaded:', { docx: docxStorage.r2Key, pdf: pdfStorage.r2Key });
 
-		// Generate secure download URL
-		const downloadUrl = `${config.PUBLIC_BASE_URL}/api/reports/${reportId}?email=${encodeURIComponent(orderRecord.email)}`;
+		// Save both report records
+		await db.insert(reports).values([
+			{
+				id: docxReportId,
+				orderId: orderRecord.id,
+				r2Key: docxStorage.r2Key,
+				documentHash: docxReport.hash,
+				format: docxReport.format,
+				signedUrl: '',
+				sentAt: new Date()
+			},
+			{
+				id: pdfReportId,
+				orderId: orderRecord.id,
+				r2Key: pdfStorage.r2Key,
+				documentHash: pdfReport.hash,
+				format: pdfReport.format,
+				signedUrl: '',
+				sentAt: new Date()
+			}
+		]);
 
-		// Send email or Telegram
+		console.log('✅ Report records saved');
+
+		// Send email or Telegram with both formats
 		if (orderRecord.source === 'web') {
-			console.log('📧 Sending email notification');
-			await sendReport(orderRecord.email, reportId, lookupData.vin, downloadUrl, report.format);
+			console.log('📧 Sending email notification with both formats as attachments');
+			await sendReport(orderRecord.email, docxReportId, lookupData.vin, docxReport.buffer, pdfReport.buffer);
 			console.log('✅ Email sent');
 		} else if (orderRecord.source === 'telegram' && orderRecord.telegramChatId) {
-			console.log('📱 Sending to Telegram');
-			// Send document to Telegram with correct extension
+			console.log('📱 Sending both formats to Telegram');
 			const { bot } = await import('../../../../telegram-bot');
-			const extension = report.format === 'docx' ? 'docx' : 'pdf';
-			await bot.telegram.sendDocument(orderRecord.telegramChatId, {
-				source: report.buffer,
-				filename: `vin-report-${lookupData.vin}.${extension}`
-			});
-			console.log('✅ Telegram message sent');
+			
+			// Send both documents to Telegram
+			await Promise.all([
+				bot.telegram.sendDocument(orderRecord.telegramChatId, {
+					source: docxReport.buffer,
+					filename: `motocheck-report-${lookupData.vin}.docx`
+				}, {
+					caption: '📄 Word Document (editable)'
+				}),
+				bot.telegram.sendDocument(orderRecord.telegramChatId, {
+					source: pdfReport.buffer,
+					filename: `motocheck-report-${lookupData.vin}.pdf`
+				}, {
+					caption: '📕 PDF Document'
+				})
+			]);
+			
+			console.log('✅ Telegram messages sent');
 		}
 
 		console.log('🎉 Webhook processing complete');

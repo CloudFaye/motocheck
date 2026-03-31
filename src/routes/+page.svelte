@@ -150,7 +150,7 @@
 		></div>
 	</div>
 
-	<div class="container-wide relative z-10 pt-20 pb-24 md:pt-28 md:pb-32">
+	<div class="container-wide relative z-10 pt-20 pb-24 ">
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
 			<!-- Left: copy + form -->
@@ -255,16 +255,16 @@
 
 			<!-- Right: visual card -->
 			<div class="hidden lg:flex items-center justify-center animate-fade-up animate-delay-200">
-				<div class="relative w-full max-w-sm">
+				<div class="relative w-full max-w-lg">
 					<!-- Sample report preview card -->
-					<div class="card m-0 p-0 overflow-hidden">
+					<div class="card m-0 p-0 overflow-hidden shadow-xl">
 						<!-- Card header -->
 						<div
-							class="flex items-center justify-between px-3 py-3 border-b border-surface-border bg-surface-warm"
+							class="flex items-center justify-between px-5 py-4 border-b border-surface-border bg-white"
 						>
-							<div class="flex items-center gap-2.5">
-								<div class="w-7 h-7 rounded-md bg-ink flex items-center justify-center">
-									<svg width="13" height="13" viewBox="0 0 16 16" fill="none" class="text-white">
+							<div class="flex items-center gap-3">
+								<div class="w-9 h-9 rounded-lg bg-ink flex items-center justify-center">
+									<svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="text-white">
 										<path
 											d="M3 9.5L4.5 5.5h7L13 9.5"
 											stroke="currentColor"
@@ -286,52 +286,52 @@
 									</svg>
 								</div>
 								<div>
-									<p class="text-xs font-semibold font-sans text-ink">Vehicle Report</p>
-									<p class="text-2xs text-ink-faint  font-mono">1HGBH41JXMN109186</p>
+									<p class="text-sm font-semibold font-sans text-ink">Vehicle Report</p>
+									<p class="text-xs text-ink-faint font-mono">1HGBH41JXMN109186</p>
 								</div>
 							</div>
 							<span class="badge-green">Verified</span>
 						</div>
 
 						<!-- Card body — mini data preview -->
-						<div class="px-6 py-5 space-y-4">
+						<div class="px-6 py-6 space-y-5">
 							<div>
-								<p class="text-2xs uppercase tracking-widest text-ink-faint font-sans mb-1">
+								<p class="text-xs text-ink-faint font-sans mb-2">
 									Vehicle
 								</p>
-								<p class="text-sm font-semibold font-sans text-ink">2021 Honda Accord LX</p>
-								<p class="text-xs text-ink-muted font-sans">1.5T · Automatic · FWD · Silver</p>
+								<p class="text-base font-semibold font-sans text-ink mb-1">2021 Honda Accord LX</p>
+								<p class="text-sm text-ink-muted font-sans">1.5T · Automatic · FWD · Silver</p>
 							</div>
 
-							<div class="divider-dashed"></div>
+							<div class="divider"></div>
 
 							<div>
-								<p class="text-2xs uppercase tracking-widest text-ink-faint font-sans mb-2">
+								<p class="text-xs text-ink-faint font-sans mb-3">
 									Import Duty Summary
 								</p>
-								<div class="space-y-1.5">
+								<div class="space-y-2">
 									{#each [{ label: 'CIF Value (USD)', value: '$12,500' }, { label: 'Import Duty (35%)', value: '₦15,312,500' }, { label: 'VAT (7.5%)', value: '₦2,109,375' }, { label: 'Port Charges', value: '₦185,000' }] as row (row.label)}
-										<div class="flex justify-between text-xs">
+										<div class="flex justify-between text-sm">
 											<span class="text-ink-muted">{row.label}</span>
 											<span class="font-medium text-ink tabular-nums">{row.value}</span>
 										</div>
 									{/each}
 								</div>
 								<div
-									class="mt-3 pt-3 border-t border-surface-border flex justify-between items-center"
+									class="mt-4 pt-4 border-t border-surface-border flex justify-between items-center"
 								>
-									<span class="text-xs font-semibold font-sans text-ink">Total Estimate</span>
-									<span class="text-sm font-bold font-sans text-gold-600 tabular-nums"
+									<span class="text-sm font-semibold font-sans text-ink">Total Estimate</span>
+									<span class="text-base font-bold font-sans text-gold-600 tabular-nums"
 										>₦17,606,875</span
 									>
 								</div>
 							</div>
 
-							<div class="divider-dashed"></div>
+							<div class="divider"></div>
 
 							<div class="flex items-center gap-2">
 								<svg
-									class="w-3.5 h-3.5 text-emerald-500 shrink-0"
+									class="w-4 h-4 text-emerald-500 shrink-0"
 									viewBox="0 0 14 14"
 									fill="none"
 								>
@@ -344,13 +344,13 @@
 										stroke-linejoin="round"
 									/>
 								</svg>
-								<p class="text-xs text-emerald-600 font-sans">No active safety recalls</p>
+								<p class="text-sm text-emerald-600 font-sans">No active safety recalls</p>
 							</div>
 						</div>
 
 						<!-- Card footer -->
-						<div class="px-6 py-3 bg-surface-subtle border-t border-surface-border">
-							<p class="text-2xs text-ink-faint font-sans text-center">
+						<div class="px-6 py-3 bg-white border-t border-surface-border">
+							<p class="text-xs text-ink-faint font-sans text-center">
 								Based on NCS tables · CBN rate as of today
 							</p>
 						</div>
@@ -358,10 +358,9 @@
 
 					<!-- Floating badge -->
 					<div
-						class="absolute -top-3 -right-3 bg-ink text-white rounded-xl px-3 py-2"
+						class="absolute -top-3 -right-3 bg-ink text-white rounded-xl px-4 py-2.5 shadow-lg"
 					>
-						<p class="text-2xs font-semibold font-sans uppercase tracking-widest">NHTSA</p>
-						<p class="text-xs font-bold font-sans">Verified Data</p>
+						<p class="text-xs font-semibold font-sans">NHTSA Verified</p>
 					</div>
 				</div>
 			</div>
@@ -369,15 +368,15 @@
 	</div>
 
 	<!-- Stats bar -->
-	<div class="border-t border-surface-border bg-surface-subtle">
-		<div class="container-wide py-6">
+	<div class="border-t border-surface-border bg-white">
+		<div class="container-wide py-8">
 			<div
-				class="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x divide-surface-border"
+				class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 md:divide-x divide-surface-border"
 			>
-				{#each [{ value: '10,000+', label: 'Reports generated' }, { value: '₦2,500', label: 'Flat fee, no hidden charges' }, { value: '<60s', label: 'Average delivery time' }, { value: '99.2%', label: 'Data accuracy rate' }] as stat (stat.label)}
+				{#each [{ value: '10,000+', label: 'Reports generated' }, { value: '₦2,500', label: 'Flat fee' }, { value: '<60s', label: 'Delivery time' }, { value: '99.2%', label: 'Accuracy rate' }] as stat (stat.label)}
 					<div class="stat-item md:px-8 first:pl-0 last:pr-0 text-center md:text-left">
 						<span class="stat-value text-3xl">{stat.value}</span>
-						<span class="stat-label text-xs mt-0.5">{stat.label}</span>
+						<span class="stat-label text-sm mt-1">{stat.label}</span>
 					</div>
 				{/each}
 			</div>
@@ -426,7 +425,7 @@
 <!-- ════════════════════════════════════════════════════
      WHAT WE INSPECT
 ════════════════════════════════════════════════════════ -->
-<section id="features" class="section-pad bg-surface-warm border-y border-surface-border">
+<section id="features" class="section-pad bg-white border-y border-surface-border">
 	<div class="container-wide">
 		<div class="grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-16 items-start">
 			<!-- Sticky left header -->
@@ -547,7 +546,7 @@
 <!-- ════════════════════════════════════════════════════
      TESTIMONIALS
 ════════════════════════════════════════════════════════ -->
-<section class="section-pad bg-surface-subtle border-y border-surface-border">
+<section class="section-pad bg-white border-y border-surface-border">
 	<div class="container-wide">
 		<div class="mb-12 text-center">
 			<div class="flex items-center justify-center gap-3 mb-4">
