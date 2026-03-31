@@ -54,7 +54,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		// Fetch PDF from R2
 		const pdfBuffer = await getReport(report.r2Key);
 
-		return new Response(pdfBuffer, {
+		return new Response(pdfBuffer as BodyInit, {
 			headers: {
 				'Content-Type': 'application/pdf',
 				'Content-Disposition': `attachment; filename="vehicle-report-${order.lookupId}.pdf"`,

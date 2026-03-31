@@ -7,6 +7,7 @@ import puppeteer, { type Browser } from 'puppeteer';
 import crypto from 'crypto';
 import type { ComprehensiveVehicleData } from '../vehicle/types';
 import { buildReportHTML } from './template-builder';
+import { VehicleImageService, type ImageResult } from '../vehicle-image-service';
 
 export interface ReportGenerationOptions {
 	includeNCSValuation?: boolean;
@@ -68,10 +69,33 @@ export async function generateVehicleReport(
 	vehicleData: ComprehensiveVehicleData,
 	options: ReportGenerationOptions = {}
 ): Promise<GeneratedReport> {
+	const startTime = Date.now();
 	const browser = await getBrowser();
 	const page = await browser.newPage();
 
 	try {
+		// Fetch vehicle images with timeout
+		const imageService = new VehicleImageService();
+		try {
+			const imagesPromise = imageService.searchImages({
+				vin: vehicleData.identification.vin,
+				make: vehicleData.identification.make,
+				model: vehicleData.identification.model,
+				year: vehicleData.identification.modelYear
+			});
+
+			// Race with 3-second timeout
+			vehicleData.images = await Promise.race([
+				imagesPromise,
+				new Promise<ImageResult[]>((resolve) => 
+					setTimeout(() => resolve([]), 3000)
+				)
+			]);
+		} catch (error) {
+			console.warn('Image fetch failed, using empty array:', error);
+			vehicleData.images = [];
+		}
+
 		// Build HTML from vehicle data
 		const html = buildReportHTML(vehicleData, options);
 
@@ -87,6 +111,9 @@ export async function generateVehicleReport(
 
 		// Generate hash for integrity verification
 		const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+
+		const duration = Date.now() - startTime;
+		console.log(`Report generated in ${duration}ms`);
 
 		return { 
 			pdfBuffer: Buffer.from(pdfBuffer), 

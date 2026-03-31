@@ -3,36 +3,36 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { handleFlutterwaveWebhook } from './webhook-handler';
+import { handlePaystackWebhook } from './webhook-handler';
 import crypto from 'crypto';
 
 describe('Webhook Handler', () => {
 	it('should reject invalid HMAC signature', async () => {
 		const payload = {
-			event: 'charge.completed',
+			event: 'charge.success',
 			data: {
-				id: '123',
-				tx_ref: 'vin-test',
-				amount: 5000,
+				id: 123,
+				reference: 'vin-test',
+				amount: 500000, // in kobo
 				currency: 'NGN',
-				status: 'successful'
+				status: 'success'
 			}
 		};
 
 		const rawBody = JSON.stringify(payload);
 		const invalidHash = 'invalid-hash';
 
-		const result = await handleFlutterwaveWebhook(rawBody, invalidHash, payload);
+		const result = await handlePaystackWebhook(rawBody, invalidHash, payload);
 		expect(result.valid).toBe(false);
 	});
 
-	it('should reject non-charge.completed events', async () => {
+	it('should reject non-charge.success events', async () => {
 		const payload = {
 			event: 'charge.failed',
 			data: {
-				id: '123',
-				tx_ref: 'vin-test',
-				amount: 5000,
+				id: 123,
+				reference: 'vin-test',
+				amount: 500000,
 				currency: 'NGN',
 				status: 'failed'
 			}
@@ -40,11 +40,11 @@ describe('Webhook Handler', () => {
 
 		const rawBody = JSON.stringify(payload);
 		const hash = crypto
-			.createHmac('sha512', process.env.FLW_SECRET_HASH || 'test')
+			.createHmac('sha512', process.env.PAYSTACK_SECRET_KEY || 'test')
 			.update(rawBody)
 			.digest('hex');
 
-		const result = await handleFlutterwaveWebhook(rawBody, hash, payload);
+		const result = await handlePaystackWebhook(rawBody, hash, payload);
 		expect(result.valid).toBe(false);
 	});
 });

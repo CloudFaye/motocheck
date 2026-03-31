@@ -53,3 +53,14 @@ export const reports = pgTable('reports', {
 	sentAt: timestamp('sent_at', { withTimezone: true }).notNull(),
 	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 });
+
+/**
+ * Vehicle Images Cache table - Stores image search results
+ * 24-hour TTL for image aggregation results
+ */
+export const vehicleImagesCache = pgTable('vehicle_images_cache', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	vin: varchar('vin', { length: 17 }).notNull().unique(),
+	imagesJson: jsonb('images_json').notNull(),
+	cachedAt: timestamp('cached_at', { withTimezone: true }).defaultNow().notNull()
+});

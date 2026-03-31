@@ -15,6 +15,13 @@
       "when": 1774809691379,
       "tag": "0001_dazzling_devos",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774955272434,
+      "tag": "0002_gray_natasha_romanoff",
+      "breakpoints": true
     }
   ]
 }

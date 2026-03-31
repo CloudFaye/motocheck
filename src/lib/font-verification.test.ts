@@ -13,9 +13,11 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
+// Read layout CSS once for all tests
+const layoutCssPath = join(process.cwd(), 'src/routes/layout.css');
+const layoutCss = readFileSync(layoutCssPath, 'utf-8');
+
 describe('Task 3.1: Font Loading Verification', () => {
-	const layoutCssPath = join(process.cwd(), 'src/routes/layout.css');
-	const layoutCss = readFileSync(layoutCssPath, 'utf-8');
 
 	describe('3.1.1: Instrument Serif for Headings', () => {
 		it('should import Instrument Serif from Google Fonts', () => {
