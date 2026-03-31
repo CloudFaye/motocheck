@@ -99,14 +99,32 @@ export async function generateVehicleReport(
 		// Build HTML from vehicle data
 		const html = buildReportHTML(vehicleData, options);
 
-		// Set content and generate PDF
-		await page.setContent(html, { waitUntil: 'networkidle0' });
+		// Set content with optimized wait strategy
+		// Use 'domcontentloaded' instead of 'networkidle0' for faster rendering
+		// Increase timeout to 60 seconds for comprehensive reports
+		try {
+			await page.setContent(html, { 
+				waitUntil: 'domcontentloaded',
+				timeout: 60000 
+			});
+			
+			// Wait a bit for any inline styles to apply
+			await new Promise(resolve => setTimeout(resolve, 500));
+		} catch (contentError) {
+			console.error('Error setting page content, retrying with load strategy:', contentError);
+			// Retry with even simpler strategy
+			await page.setContent(html, { 
+				waitUntil: 'load',
+				timeout: 60000 
+			});
+		}
 		
 		const pdfBuffer = await page.pdf({
 			format: 'A4',
 			printBackground: true,
 			margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
-			preferCSSPageSize: true
+			preferCSSPageSize: true,
+			timeout: 60000
 		});
 
 		// Generate hash for integrity verification
@@ -119,6 +137,9 @@ export async function generateVehicleReport(
 			pdfBuffer: Buffer.from(pdfBuffer), 
 			hash 
 		};
+	} catch (error) {
+		console.error('PDF generation failed:', error);
+		throw new Error(`Failed to generate PDF report: ${error instanceof Error ? error.message : 'Unknown error'}`);
 	} finally {
 		await page.close();
 	}
