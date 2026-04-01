@@ -13,18 +13,21 @@ export interface PDFGenerationResult {
 	hash: string;
 }
 
-// Color palette matching your design
+// Professional color palette - strictly black text for readability
 const COLORS = {
-	primary: '#d4943a',
-	secondary: '#0f0f0f',
-	text: '#0f0f0f',
-	textLight: '#6b7280',
-	textFaint: '#9ca3af',
-	border: '#e5e7eb',
-	background: '#f9fafb',
+	primary: '#000000',        // Black for all text
+	text: '#000000',           // Black
+	textLight: '#000000',      // Black
+	textFaint: '#000000',      // Black
+	border: '#cccccc',         // Light gray borders
+	background: '#f5f5f5',     // Very light gray background
 	white: '#ffffff',
-	green: '#10b981'
+	headerBg: '#e8e8e8',       // Light gray for headers
+	success: '#000000',
+	error: '#000000'
 };
+
+// PDFKit built-in fonts don't support Unicode - use NGN prefix for currency
 
 /**
  * Generate PDF report using PDFKit
@@ -90,17 +93,15 @@ async function buildPDFContent(
 		);
 
 	doc.fontSize(11)
-		.fillColor(COLORS.textLight)
+		.fillColor(COLORS.text)
 		.font('Courier')
 		.text(`VIN: ${vehicleData.identification.vin}`, { align: 'left' });
 
 	doc.moveDown(1.5);
 	addDivider(doc);
 
-	// Vehicle Images (if available)
-	if (vehicleData.images && vehicleData.images.length > 0) {
-		await addVehicleImages(doc, vehicleData.images);
-	}
+	// Vehicle Images (if available) - moved to END
+	// (rendered after all data sections)
 
 	// Vehicle Specifications
 	addSection(doc, 'Vehicle Specifications', [
@@ -132,8 +133,8 @@ async function buildPDFContent(
 		doc.addPage();
 		addSection(doc, 'NCS Valuation', [
 			['CIF Value (USD)', `$${options.cifUsd.toLocaleString()}`],
-			['CIF Value (NGN)', `₦${options.cifNgn?.toLocaleString() || 'N/A'}`],
-			['CBN Exchange Rate', options.cbnRate ? `₦${options.cbnRate.toLocaleString()}/USD` : 'N/A'],
+			['CIF Value (NGN)', `NGN ${options.cifNgn?.toLocaleString() || 'N/A'}`],
+			['CBN Exchange Rate', options.cbnRate ? `NGN ${options.cbnRate.toLocaleString()}/USD` : 'N/A'],
 			['Confidence Level', options.confidence || 'N/A']
 		]);
 	}
@@ -142,35 +143,35 @@ async function buildPDFContent(
 	if (options.includeDutyBreakdown && options.dutyBreakdown) {
 		const duty = options.dutyBreakdown;
 		addSection(doc, 'Nigerian Import Duty Breakdown', [
-			['Import Duty (35%)', `₦${duty.importDuty.toLocaleString()}`],
-			['Surcharge (7%)', `₦${duty.surcharge.toLocaleString()}`],
-			['NAC Levy (20%)', `₦${duty.nacLevy.toLocaleString()}`],
-			['CISS (1%)', `₦${duty.ciss.toLocaleString()}`],
-			['ETLS (0.5%)', `₦${duty.etls.toLocaleString()}`],
-			['VAT (7.5%)', `₦${duty.vat.toLocaleString()}`]
+			['Import Duty (35%)', `NGN ${duty.importDuty.toLocaleString()}`],
+			['Surcharge (7%)', `NGN ${duty.surcharge.toLocaleString()}`],
+			['NAC Levy (20%)', `NGN ${duty.nacLevy.toLocaleString()}`],
+			['CISS (1%)', `NGN ${duty.ciss.toLocaleString()}`],
+			['ETLS (0.5%)', `NGN ${duty.etls.toLocaleString()}`],
+			['VAT (7.5%)', `NGN ${duty.vat.toLocaleString()}`]
 		]);
 
 		// Total in highlighted box
 		doc.moveDown(0.5);
 		const totalY = doc.y;
-		doc.rect(doc.page.margins.left, totalY, pageWidth, 40)
-			.fillAndStroke(COLORS.background, COLORS.border);
+		doc.rect(doc.page.margins.left, totalY, pageWidth, 32)
+			.fillAndStroke(COLORS.headerBg, COLORS.border);
 
 		doc.fillColor(COLORS.text)
-			.fontSize(12)
+			.fontSize(11)
 			.font('Helvetica-Bold')
-			.text('TOTAL IMPORT DUTY', doc.page.margins.left + 20, totalY + 12);
+			.text('TOTAL IMPORT DUTY', doc.page.margins.left + 15, totalY + 10);
 
-		doc.fontSize(16)
-			.fillColor(COLORS.primary)
+		doc.fontSize(14)
+			.fillColor(COLORS.text)
 			.text(
-				`₦${duty.totalDutyNgn.toLocaleString()}`,
-				doc.page.margins.left + 20,
-				totalY + 12,
-				{ align: 'right', width: pageWidth - 40 }
+				`NGN ${duty.totalDutyNgn.toLocaleString()}`,
+				doc.page.margins.left + 15,
+				totalY + 10,
+				{ align: 'right', width: pageWidth - 30 }
 			);
 
-		doc.moveDown(2);
+		doc.moveDown(2.5);
 	}
 
 	// Safety Recalls
@@ -188,7 +189,7 @@ async function buildPDFContent(
 				.text(`Campaign: ${recall.nhtsaCampaignNumber || 'N/A'}`);
 
 			doc.fontSize(10)
-				.fillColor(COLORS.textLight)
+				.fillColor(COLORS.text)
 				.font('Helvetica')
 				.text(`Component: ${recall.component || 'N/A'}`)
 				.text(`Summary: ${recall.summary || 'No details available'}`)
@@ -208,6 +209,12 @@ async function buildPDFContent(
 		['Manufacturer', vehicleData.identification.manufacturer || 'N/A']
 	]);
 
+	// Vehicle Images - LAST section
+	if (vehicleData.images && vehicleData.images.length > 0) {
+		doc.addPage();
+		await addVehicleImages(doc, vehicleData.images);
+	}
+
 	// Footer on last page
 	addFooter(doc);
 }
@@ -216,12 +223,12 @@ async function buildPDFContent(
  * Add header to document
  */
 function addHeader(doc: PDFKit.PDFDocument, vehicleData: ComprehensiveVehicleData): void {
-	doc.fontSize(20)
-		.fillColor(COLORS.primary)
+	doc.fontSize(18)
+		.fillColor(COLORS.text)
 		.font('Helvetica-Bold')
 		.text('MotoCheck', { continued: true })
-		.fontSize(12)
-		.fillColor(COLORS.textLight)
+		.fontSize(11)
+		.fillColor(COLORS.text)
 		.font('Helvetica')
 		.text(' | Comprehensive Vehicle History Report');
 
@@ -233,7 +240,7 @@ function addHeader(doc: PDFKit.PDFDocument, vehicleData: ComprehensiveVehicleDat
 	const reportId = vehicleData.identification.vin.slice(-8).toUpperCase();
 
 	doc.fontSize(9)
-		.fillColor(COLORS.textFaint)
+		.fillColor(COLORS.text)
 		.text(`Report Date: ${reportDate} | Report ID: ${reportId}`);
 
 	doc.moveDown(0.5);
@@ -248,7 +255,7 @@ function addSection(doc: PDFKit.PDFDocument, title: string, rows: string[][]): v
 	doc.moveDown(0.5);
 
 	const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-	const labelWidth = pageWidth * 0.4;
+	const labelWidth = pageWidth * 0.45;
 
 	rows.forEach((row, index) => {
 		const [label, value] = row;
@@ -256,31 +263,31 @@ function addSection(doc: PDFKit.PDFDocument, title: string, rows: string[][]): v
 
 		const y = doc.y;
 
-		// Alternating background
+		// Alternating background for readability
 		if (index % 2 === 0) {
-			doc.rect(doc.page.margins.left, y - 3, pageWidth, 20)
+			doc.rect(doc.page.margins.left, y - 3, pageWidth, 18)
 				.fill(COLORS.background);
 		}
 
-		// Label
+		// Label (left-aligned, black)
 		doc.fontSize(10)
-			.fillColor(COLORS.textLight)
+			.fillColor(COLORS.text)
 			.font('Helvetica')
 			.text(label, doc.page.margins.left + 10, y, {
 				width: labelWidth,
 				continued: false
 			});
 
-		// Value
+		// Value (right-aligned, black, bold)
 		doc.fontSize(10)
 			.fillColor(COLORS.text)
 			.font('Helvetica-Bold')
-			.text(value, doc.page.margins.left + labelWidth + 20, y, {
-				width: pageWidth - labelWidth - 30,
+			.text(value, doc.page.margins.left + labelWidth + 10, y, {
+				width: pageWidth - labelWidth - 20,
 				align: 'right'
 			});
 
-		doc.moveDown(0.3);
+		doc.moveDown(0.25);
 	});
 
 	doc.moveDown(1);
@@ -290,19 +297,19 @@ function addSection(doc: PDFKit.PDFDocument, title: string, rows: string[][]): v
  * Add section header
  */
 function addSectionHeader(doc: PDFKit.PDFDocument, title: string): void {
-	doc.fontSize(14)
+	// Add background bar for section header
+	const y = doc.y;
+	const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+	
+	doc.rect(doc.page.margins.left, y, pageWidth, 24)
+		.fill(COLORS.headerBg);
+
+	doc.fontSize(13)
 		.fillColor(COLORS.text)
 		.font('Helvetica-Bold')
-		.text(title);
+		.text(title, doc.page.margins.left + 10, y + 6);
 
-	const y = doc.y;
-	doc.moveTo(doc.page.margins.left, y + 5)
-		.lineTo(doc.page.width - doc.page.margins.right, y + 5)
-		.strokeColor(COLORS.border)
-		.lineWidth(1)
-		.stroke();
-
-	doc.moveDown(0.5);
+	doc.moveDown(0.8);
 }
 
 /**
@@ -334,7 +341,7 @@ async function addVehicleImages(doc: PDFKit.PDFDocument, images: import('../vehi
 	
 	if (displayImages.length === 0) {
 		doc.fontSize(10)
-			.fillColor(COLORS.textLight)
+			.fillColor(COLORS.text)
 			.font('Helvetica')
 			.text('No vehicle images available', { align: 'center' });
 		doc.moveDown(1);
@@ -374,7 +381,7 @@ async function addVehicleImages(doc: PDFKit.PDFDocument, images: import('../vehi
 			// Add caption
 			const caption = `Source: ${img.source} | Match: ${img.matchType}${img.metadata?.date ? ` | Date: ${img.metadata.date}` : ''}`;
 			doc.fontSize(9)
-				.fillColor(COLORS.textLight)
+				.fillColor(COLORS.text)
 				.font('Helvetica')
 				.text(caption, { align: 'center' });
 			
@@ -398,7 +405,7 @@ function addFooter(doc: PDFKit.PDFDocument): void {
 	addDivider(doc);
 
 	doc.fontSize(8)
-		.fillColor(COLORS.textFaint)
+		.fillColor(COLORS.text)
 		.font('Helvetica')
 		.text(
 			'Disclaimer: Information accuracy depends on source data quality. This report should be used as a reference guide. Always verify critical details independently before making purchase decisions.',

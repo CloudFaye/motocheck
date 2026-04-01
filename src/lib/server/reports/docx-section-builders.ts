@@ -345,157 +345,219 @@ export async function embedImageSafely(
  * - Theft Record status
  */
 export function buildKeyHighlightsSection(data: ComprehensiveVehicleData): (Paragraph | Table)[] {
-  const content: Paragraph[] = [];
-
-  // Section title
-  content.push(
-    ...createSectionHeader('Key Highlights', '📊')
-  );
-
   // Calculate highlight values
   const ownersCount = data.ownership?.numberOfOwners || 0;
   const accidentsCount = data.accidents?.totalAccidents || 0;
   const recallsCount = data.recalls?.length || 0;
   const isStolen = data.theft?.isStolen || false;
 
-  // Create 4-card grid using table
-  const highlightCards = new Table({
+  // Create a simple 2x4 table: Row 1 = Labels, Row 2 = Values with badges
+  const highlightTable = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
+    columnWidths: [2500, 2500, 2500, 2500], // Equal widths in DXA units
     rows: [
-      // Row 1: Icons
+      // Row 1: Labels
       new TableRow({
         children: [
           new TableCell({
-            children: [new Paragraph({ text: '🚗', alignment: AlignmentType.CENTER })],
-            width: { size: 25, type: WidthType.PERCENTAGE },
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: '🚗', size: 32 }),
+                  new TextRun({ text: '\n', size: 8 }),
+                  new TextRun({ text: 'Previous Owners', size: 18, font: DOCX_STYLES.fonts.body, color: DOCX_STYLES.colors.textSecondary })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 120, after: 80 }
+              })
+            ],
             shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
+            margins: { top: 120, bottom: 80, left: 80, right: 80 },
+            verticalAlign: VerticalAlign.CENTER
           }),
           new TableCell({
-            children: [new Paragraph({ text: '⚠️', alignment: AlignmentType.CENTER })],
-            width: { size: 25, type: WidthType.PERCENTAGE },
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: '⚠', size: 32 }),
+                  new TextRun({ text: '\n', size: 8 }),
+                  new TextRun({ text: 'Accidents Reported', size: 18, font: DOCX_STYLES.fonts.body, color: DOCX_STYLES.colors.textSecondary })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 120, after: 80 }
+              })
+            ],
             shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
+            margins: { top: 120, bottom: 80, left: 80, right: 80 },
+            verticalAlign: VerticalAlign.CENTER
           }),
           new TableCell({
-            children: [new Paragraph({ text: '🔧', alignment: AlignmentType.CENTER })],
-            width: { size: 25, type: WidthType.PERCENTAGE },
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: '🔧', size: 32 }),
+                  new TextRun({ text: '\n', size: 8 }),
+                  new TextRun({ text: 'Open Recalls', size: 18, font: DOCX_STYLES.fonts.body, color: DOCX_STYLES.colors.textSecondary })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 120, after: 80 }
+              })
+            ],
             shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
+            margins: { top: 120, bottom: 80, left: 80, right: 80 },
+            verticalAlign: VerticalAlign.CENTER
           }),
           new TableCell({
-            children: [new Paragraph({ text: '🔒', alignment: AlignmentType.CENTER })],
-            width: { size: 25, type: WidthType.PERCENTAGE },
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: '🔒', size: 32 }),
+                  new TextRun({ text: '\n', size: 8 }),
+                  new TextRun({ text: 'Theft Record', size: 18, font: DOCX_STYLES.fonts.body, color: DOCX_STYLES.colors.textSecondary })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 120, after: 80 }
+              })
+            ],
             shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
+            margins: { top: 120, bottom: 80, left: 80, right: 80 },
+            verticalAlign: VerticalAlign.CENTER
           })
         ]
       }),
-      // Row 2: Numbers
+      // Row 2: Values and Badges
       new TableRow({
         children: [
           new TableCell({
-            children: [new Paragraph({
-              children: [new TextRun({ text: ownersCount.toString(), size: 48, bold: true, color: DOCX_STYLES.colors.primary })],
-              alignment: AlignmentType.CENTER
-            })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({ 
+                    text: ownersCount.toString(), 
+                    size: 48, 
+                    bold: true, 
+                    color: DOCX_STYLES.colors.primary,
+                    font: DOCX_STYLES.fonts.heading
+                  })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 100, after: 100 }
+              }),
+              new Paragraph({
+                children: createBadge(
+                  ownersCount <= 2 ? 'Clean' : ownersCount <= 4 ? 'Multiple' : 'Many',
+                  ownersCount <= 2 ? 'success' : 'warning'
+                ),
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 120 }
+              })
+            ],
+            shading: { fill: DOCX_STYLES.colors.white },
+            margins: { top: 100, bottom: 120, left: 80, right: 80 },
+            verticalAlign: VerticalAlign.CENTER
           }),
           new TableCell({
-            children: [new Paragraph({
-              children: [new TextRun({ text: accidentsCount.toString(), size: 48, bold: true, color: DOCX_STYLES.colors.primary })],
-              alignment: AlignmentType.CENTER
-            })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({ 
+                    text: accidentsCount.toString(), 
+                    size: 48, 
+                    bold: true, 
+                    color: accidentsCount === 0 ? DOCX_STYLES.colors.success : DOCX_STYLES.colors.warning,
+                    font: DOCX_STYLES.fonts.heading
+                  })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 100, after: 100 }
+              }),
+              new Paragraph({
+                children: createBadge(
+                  accidentsCount === 0 ? 'No Accidents' : `${accidentsCount} Accident${accidentsCount > 1 ? 's' : ''}`,
+                  accidentsCount === 0 ? 'success' : 'warning'
+                ),
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 120 }
+              })
+            ],
+            shading: { fill: DOCX_STYLES.colors.white },
+            margins: { top: 100, bottom: 120, left: 80, right: 80 },
+            verticalAlign: VerticalAlign.CENTER
           }),
           new TableCell({
-            children: [new Paragraph({
-              children: [new TextRun({ text: recallsCount.toString(), size: 48, bold: true, color: DOCX_STYLES.colors.primary })],
-              alignment: AlignmentType.CENTER
-            })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({ 
+                    text: recallsCount.toString(), 
+                    size: 48, 
+                    bold: true, 
+                    color: recallsCount === 0 ? DOCX_STYLES.colors.success : DOCX_STYLES.colors.warning,
+                    font: DOCX_STYLES.fonts.heading
+                  })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 100, after: 100 }
+              }),
+              new Paragraph({
+                children: createBadge(
+                  recallsCount === 0 ? 'No Recalls' : `${recallsCount} Recall${recallsCount > 1 ? 's' : ''}`,
+                  recallsCount === 0 ? 'success' : 'warning'
+                ),
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 120 }
+              })
+            ],
+            shading: { fill: DOCX_STYLES.colors.white },
+            margins: { top: 100, bottom: 120, left: 80, right: 80 },
+            verticalAlign: VerticalAlign.CENTER
           }),
           new TableCell({
-            children: [new Paragraph({
-              children: [new TextRun({ text: isStolen ? 'STOLEN' : 'No', size: 48, bold: true, color: isStolen ? DOCX_STYLES.colors.error : DOCX_STYLES.colors.primary })],
-              alignment: AlignmentType.CENTER
-            })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
-          })
-        ]
-      }),
-      // Row 3: Labels
-      new TableRow({
-        children: [
-          new TableCell({
-            children: [new Paragraph({ text: 'Previous Owners', alignment: AlignmentType.CENTER })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
-          }),
-          new TableCell({
-            children: [new Paragraph({ text: 'Accidents Reported', alignment: AlignmentType.CENTER })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
-          }),
-          new TableCell({
-            children: [new Paragraph({ text: 'Open Recalls', alignment: AlignmentType.CENTER })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
-          }),
-          new TableCell({
-            children: [new Paragraph({ text: 'Theft Record', alignment: AlignmentType.CENTER })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
-          })
-        ]
-      }),
-      // Row 4: Status Badges
-      new TableRow({
-        children: [
-          new TableCell({
-            children: [new Paragraph({
-              children: createBadge(ownersCount <= 2 ? '✓ Clean' : ownersCount <= 4 ? '⚠ Multiple' : '⚠ Many', ownersCount <= 2 ? 'success' : 'warning'),
-              alignment: AlignmentType.CENTER
-            })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
-          }),
-          new TableCell({
-            children: [new Paragraph({
-              children: createBadge(accidentsCount === 0 ? '✓ No Accidents' : accidentsCount === 1 ? '⚠ 1 Accident' : '⚠ Multiple', accidentsCount === 0 ? 'success' : 'warning'),
-              alignment: AlignmentType.CENTER
-            })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
-          }),
-          new TableCell({
-            children: [new Paragraph({
-              children: createBadge(recallsCount === 0 ? '✓ No Recalls' : '⚠ Check Recalls', recallsCount === 0 ? 'success' : 'warning'),
-              alignment: AlignmentType.CENTER
-            })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
-          }),
-          new TableCell({
-            children: [new Paragraph({
-              children: createBadge(isStolen ? '⛔ STOLEN' : '✓ Clean', isStolen ? 'error' : 'success'),
-              alignment: AlignmentType.CENTER
-            })],
-            shading: { fill: DOCX_STYLES.colors.backgroundLight },
-            borders: TABLE_BORDERS
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({ 
+                    text: isStolen ? 'YES' : 'No', 
+                    size: 48, 
+                    bold: true, 
+                    color: isStolen ? DOCX_STYLES.colors.error : DOCX_STYLES.colors.success,
+                    font: DOCX_STYLES.fonts.heading
+                  })
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 100, after: 100 }
+              }),
+              new Paragraph({
+                children: createBadge(
+                  isStolen ? 'STOLEN' : 'Clean',
+                  isStolen ? 'error' : 'success'
+                ),
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 120 }
+              })
+            ],
+            shading: { fill: DOCX_STYLES.colors.white },
+            margins: { top: 100, bottom: 120, left: 80, right: 80 },
+            verticalAlign: VerticalAlign.CENTER
           })
         ]
       })
-    ]
+    ],
+    borders: {
+      top: { style: BorderStyle.SINGLE, size: 2, color: DOCX_STYLES.colors.border },
+      bottom: { style: BorderStyle.SINGLE, size: 2, color: DOCX_STYLES.colors.border },
+      left: { style: BorderStyle.SINGLE, size: 2, color: DOCX_STYLES.colors.border },
+      right: { style: BorderStyle.SINGLE, size: 2, color: DOCX_STYLES.colors.border },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: DOCX_STYLES.colors.borderLight },
+      insideVertical: { style: BorderStyle.SINGLE, size: 1, color: DOCX_STYLES.colors.borderLight }
+    }
   });
 
-  content.push(highlightCards);
-
-  return content;
+  return [
+    ...createSectionHeader('Key Highlights', '📊'),
+    highlightTable,
+    new Paragraph({ text: '', spacing: { after: 300 } })
+  ];
 }
 
 // ===== Vehicle Images Section =====

@@ -99,7 +99,7 @@ export async function generateDOCXReport(
 	const startTime = Date.now();
 
 	try {
-		// Build vehicle images section (async)
+		// Build vehicle images section (async) - placed at END of report
 		const vehicleImagesSection = await buildVehicleImagesSection(vehicleData.images || []);
 
 		// Create document with page layout
@@ -126,8 +126,7 @@ export async function generateDOCXReport(
 						// Key Highlights Section (Carfax-inspired 4-card grid)
 						...buildKeyHighlightsSection(vehicleData),
 						
-						// All 21 report sections
-						...vehicleImagesSection,
+						// All report sections
 						...safeRenderSection('Vehicle Specifications', vehicleData, buildSpecificationsSection),
 						...safeRenderSection('Engine & Performance', vehicleData, buildEngineSection),
 						...safeRenderSection('Transmission & Drivetrain', vehicleData, buildTransmissionSection),
@@ -149,7 +148,9 @@ export async function generateDOCXReport(
 						...safeRenderSection('Market Value', vehicleData.marketValue, buildMarketValueSection),
 						...safeRenderSection('Warranty Information', vehicleData.warranty, buildWarrantySection),
 						...buildNCSValuationSection(options),
-						...buildDutyBreakdownSection(options)
+						...buildDutyBreakdownSection(options),
+						// Vehicle Images LAST
+						...vehicleImagesSection
 					]
 				}
 			]
