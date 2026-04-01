@@ -111,6 +111,14 @@ function createStatusBadge(text: string, type: 'success' | 'warning' | 'error' |
 }
 
 /**
+ * Create a badge for Key Highlights section
+ * Alias for createStatusBadge to match the function name used in buildKeyHighlightsSection
+ */
+function createBadge(text: string, type: 'success' | 'warning' | 'error' | 'info'): TextRun[] {
+  return createStatusBadge(text, type);
+}
+
+/**
  * Build a DOCX section with title and content
  */
 export function buildDOCXSection(
