@@ -172,7 +172,7 @@ export async function generateDOCXReport(
 }
 
 /**
- * Create document header with professional Carfax-inspired branding
+ * Create document header with branding and report metadata
  */
 function createHeader(vehicleData: ComprehensiveVehicleData): Paragraph {
 	const reportDate = new Date().toLocaleDateString('en-NG', {
@@ -185,20 +185,20 @@ function createHeader(vehicleData: ComprehensiveVehicleData): Paragraph {
 	return new Paragraph({
 		children: [
 			new TextRun({
-				text: 'Ⓜ️ MotoCheck',
+				text: 'MotoCheck',
 				font: DOCX_STYLES.fonts.heading,
-				size: 32,
+				size: 28,
 				bold: true,
 				color: DOCX_STYLES.colors.primary
 			}),
 			new TextRun({
-				text: ' | Professional Vehicle Reports',
+				text: ' | Comprehensive Vehicle History Report',
 				font: DOCX_STYLES.fonts.body,
-				size: 22,
-				color: DOCX_STYLES.colors.textSecondary
+				size: 20,
+				color: DOCX_STYLES.colors.secondary
 			}),
 			new TextRun({
-				text: `\nVehicle History Report | ${reportDate} | Report ID: ${reportId}`,
+				text: `\nReport Date: ${reportDate} | Report ID: ${reportId}`,
 				font: DOCX_STYLES.fonts.body,
 				size: 18,
 				color: DOCX_STYLES.colors.textLight
@@ -207,10 +207,10 @@ function createHeader(vehicleData: ComprehensiveVehicleData): Paragraph {
 		spacing: { after: 200 },
 		border: {
 			bottom: {
-				color: DOCX_STYLES.colors.primary,
+				color: DOCX_STYLES.colors.borderLight,
 				space: 1,
 				style: BorderStyle.SINGLE,
-				size: 12
+				size: 6
 			}
 		}
 	});
@@ -247,7 +247,7 @@ function createFooter(): Paragraph {
 				font: DOCX_STYLES.fonts.body,
 				size: 16,
 				bold: true,
-				color: DOCX_STYLES.colors.textSecondary
+				color: DOCX_STYLES.colors.secondary
 			})
 		],
 		spacing: { before: 200 },
@@ -290,7 +290,7 @@ function createVehicleTitleBar(vehicleData: ComprehensiveVehicleData): Paragraph
 					text: `VIN: ${vehicleData.identification.vin}`,
 					font: DOCX_STYLES.fonts.monospace,
 					size: 24,
-					color: DOCX_STYLES.colors.textSecondary
+					color: DOCX_STYLES.colors.secondary
 				})
 			],
 			spacing: { after: 400 },
@@ -492,7 +492,7 @@ export function buildEmptySectionDOCX(title: string): (Paragraph | Table)[] {
 					text: 'Data Not Available',
 					font: DOCX_STYLES.fonts.body,
 					size: 24,
-					color: DOCX_STYLES.colors.textSecondary,
+					color: DOCX_STYLES.colors.secondary,
 					bold: true
 				})
 			],
