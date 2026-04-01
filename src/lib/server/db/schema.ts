@@ -40,14 +40,13 @@ export const orders = pgTable('orders', {
 
 /**
  * Reports table - Stores generated report metadata (PDF or DOCX)
- * One-to-one relationship with orders (enforced by unique constraint)
+ * One-to-many relationship with orders (multiple formats per order)
  */
 export const reports = pgTable('reports', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	orderId: uuid('order_id')
 		.notNull()
-		.references(() => orders.id)
-		.unique(),
+		.references(() => orders.id),
 	r2Key: varchar('r2_key').notNull(),
 	documentHash: varchar('document_hash', { length: 64 }).notNull(),
 	format: varchar('format', { length: 10 }).notNull().default('pdf'),

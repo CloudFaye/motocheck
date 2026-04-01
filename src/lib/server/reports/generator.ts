@@ -6,7 +6,7 @@
 
 import crypto from 'crypto';
 import type { ComprehensiveVehicleData } from '../vehicle/types';
-import { generatePDFReport } from './pdf-generator';
+import { generatePDFReport } from './pdfkit-generator';
 import { generateDOCXReport } from './docx-generator';
 
 export interface ReportGenerationOptions {
@@ -93,9 +93,11 @@ export async function generateVehicleReport(
 
 /**
  * Close browser instance (call on app shutdown)
- * Delegates to PDF generator's browser management
+ * No-op for PDFKit-based generation
  */
-export { closeBrowser } from './pdf-generator';
+export async function closeBrowser(): Promise<void> {
+	// No browser needed with PDFKit
+}
 
 /**
  * Order interface for format detection

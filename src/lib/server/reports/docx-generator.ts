@@ -331,15 +331,15 @@ export function createDOCXTable(
 	headers: string[],
 	rows: string[][]
 ): Table {
-	// Calculate column widths - distribute evenly across 100%
-	const columnWidth = Math.floor(100 / headers.length);
+	// Calculate column widths - distribute evenly
+	const columnCount = headers.length;
+	const columnWidthPercent = Math.floor(100 / columnCount);
 	
 	return new Table({
 		width: {
 			size: 100,
 			type: WidthType.PERCENTAGE
 		},
-		columnWidths: headers.map(() => columnWidth * 100), // Convert to DXA units (1% = 100 DXA)
 		rows: [
 			// Header row
 			new TableRow({
@@ -360,7 +360,7 @@ export function createDOCXTable(
 								})
 							],
 							width: {
-								size: columnWidth,
+								size: columnWidthPercent,
 								type: WidthType.PERCENTAGE
 							},
 							shading: {
@@ -397,7 +397,9 @@ export function createDOCXTable(
 										})
 									],
 									width: {
-										size: columnWidth,
+										size: columnWidthPercent,
+										type: WidthType.PERCENTAGE
+									},
 										type: WidthType.PERCENTAGE
 									},
 									shading: {

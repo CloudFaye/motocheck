@@ -55,20 +55,20 @@ export const DOCX_STYLES: DOCXStyleConfig = {
 	fonts: {
 		heading: 'Calibri',
 		body: 'Calibri',
-		monospace: 'Courier New'
+		monospace: 'Calibri'
 	},
 	colors: {
-		primary: '3B82F6', // Blue
-		secondary: '6B7280', // Gray
+		primary: '000000', // Black
+		secondary: '666666', // Gray
 		success: '10B981', // Green
 		warning: 'F59E0B', // Amber
 		error: 'EF4444', // Red
-		text: '1F2937', // Dark gray
-		textLight: '6B7280', // Light gray
+		text: '000000', // Black
+		textLight: '666666', // Gray
 		border: 'D1D5DB', // Border gray
 		borderLight: 'E5E7EB', // Light border
-		backgroundLight: 'F9FAFB', // Very light gray
-		backgroundAlternate: 'FFFFFF' // White
+		backgroundLight: 'FFFFFF', // White
+		backgroundAlternate: 'F9FAFB' // Very light gray
 	},
 	spacing: {
 		sectionBefore: 400, // 20pt
@@ -110,7 +110,7 @@ export const HEADING_1_STYLE: Partial<IParagraphOptions> = {
 	},
 	run: {
 		font: DOCX_STYLES.fonts.heading,
-		size: 32, // 16pt
+		size: 28, // 14pt
 		bold: true,
 		color: DOCX_STYLES.colors.text
 	}
@@ -127,7 +127,7 @@ export const HEADING_2_STYLE: Partial<IParagraphOptions> = {
 	},
 	run: {
 		font: DOCX_STYLES.fonts.heading,
-		size: 28, // 14pt
+		size: 24, // 12pt
 		bold: true,
 		color: DOCX_STYLES.colors.text
 	}

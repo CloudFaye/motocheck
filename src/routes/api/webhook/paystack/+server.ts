@@ -7,6 +7,7 @@ import { generateVehicleReport } from '$lib/server/reports/generator';
 import { uploadReport } from '$lib/server/storage-service';
 import { sendReport } from '$lib/server/email-service';
 import { config } from '$lib/server/config';
+import { VehicleImageService } from '$lib/server/vehicle-image-service';
 import type { ComprehensiveVehicleData } from '$lib/server/vehicle/types';
 import type { RequestHandler } from '@sveltejs/kit';
 
@@ -108,6 +109,24 @@ export const POST: RequestHandler = async ({ request }) => {
 		const duty = lookupData.dutyJson as DutyData;
 
 		console.log('📄 Generating reports for VIN:', lookupData.vin);
+
+		// Fetch vehicle images
+		console.log('🖼️ Fetching vehicle images...');
+		const imageService = new VehicleImageService();
+		try {
+			const images = await imageService.searchImages({
+				vin: vehicleData.identification.vin,
+				make: vehicleData.identification.make,
+				model: vehicleData.identification.model,
+				year: vehicleData.identification.modelYear,
+				maxResults: 5
+			});
+			vehicleData.images = images;
+			console.log(`✅ Found ${images.length} images (sources: ${images.map(i => i.source).join(', ')})`);
+		} catch (imageError) {
+			console.warn('⚠️ Image fetch failed, continuing without images:', imageError);
+			vehicleData.images = [];
+		}
 
 		// Generate both PDF and DOCX reports
 		const reportOptions = {

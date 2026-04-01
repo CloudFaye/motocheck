@@ -220,11 +220,21 @@ export class VehicleImageService {
 	 */
 	async searchImages(options: ImageSearchOptions): Promise<ImageResult[]> {
 		try {
+			console.log('🖼️ Starting image search for:', {
+				vin: options.vin,
+				make: options.make,
+				model: options.model,
+				year: options.year
+			});
+			
 			// Check cache first
 			const cached = await this.getCached(options.vin);
 			if (cached) {
+				console.log(`✅ Found ${cached.length} cached images`);
 				return cached;
 			}
+
+			console.log('🔍 No cache found, searching image sources...');
 
 			// Call all source adapters in parallel with timeout
 			const timeout = 3000; // 3 seconds
@@ -248,12 +258,18 @@ export class VehicleImageService {
 			const images: ImageResult[] = [];
 			for (const result of results) {
 				if (result.status === 'fulfilled') {
+					console.log(`✅ Source returned ${result.value.length} images`);
 					images.push(...result.value);
+				} else {
+					console.warn('⚠️ Source failed:', result.reason?.message || 'Unknown error');
 				}
 			}
 
+			console.log(`📊 Total images collected: ${images.length}`);
+
 			// If no images found, generate placeholder
 			if (images.length === 0) {
+				console.log('⚠️ No images found, generating placeholder');
 				const placeholder = this.generatePlaceholder(options);
 				await this.setCached(options.vin, [placeholder]);
 				return [placeholder];
@@ -277,12 +293,14 @@ export class VehicleImageService {
 				? prioritized.slice(0, options.maxResults)
 				: prioritized;
 
+			console.log(`✅ Returning ${finalResults.length} images (sources: ${finalResults.map(i => i.source).join(', ')})`);
+
 			// Cache results before returning
 			await this.setCached(options.vin, finalResults);
 
 			return finalResults;
 		} catch (error) {
-			console.error('Image search failed:', error);
+			console.error('❌ Image search failed:', error);
 			return [this.generatePlaceholder(options)];
 		}
 	}
@@ -398,13 +416,22 @@ export class VehicleImageService {
 			const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
 			const searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
 			
+			console.log('🔍 Google Search API check:', {
+				hasApiKey: !!apiKey,
+				apiKeyLength: apiKey?.length || 0,
+				hasSearchEngineId: !!searchEngineId,
+				searchEngineIdLength: searchEngineId?.length || 0
+			});
+			
 			if (!apiKey || !searchEngineId) {
-				console.warn('Google Search API credentials not configured');
+				console.warn('⚠️ Google Search API credentials not configured');
 				return [];
 			}
 
 			const query = `${year} ${make} ${model} car`;
 			const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}&searchType=image&num=5`;
+			
+			console.log('🔍 Google Search query:', { query, year, make, model });
 
 			let retries = 0;
 			const maxRetries = 3;
@@ -412,11 +439,18 @@ export class VehicleImageService {
 
 			while (retries < maxRetries) {
 				try {
+					console.log(`🔍 Attempting Google Search (attempt ${retries + 1}/${maxRetries})...`);
 					const response = await fetch(url);
+					
+					console.log('🔍 Google Search response:', {
+						status: response.status,
+						statusText: response.statusText,
+						ok: response.ok
+					});
 					
 					// Handle rate limiting with exponential backoff
 					if (response.status === 429) {
-						console.warn(`Google Images rate limited, retrying in ${delay}ms...`);
+						console.warn(`⚠️ Google Images rate limited, retrying in ${delay}ms...`);
 						await new Promise(resolve => setTimeout(resolve, delay));
 						delay *= 2; // Exponential backoff
 						retries++;
@@ -424,13 +458,27 @@ export class VehicleImageService {
 					}
 
 					if (!response.ok) {
-						console.warn(`Google Images search failed: ${response.status}`);
+						const errorText = await response.text();
+						console.warn(`❌ Google Images search failed: ${response.status} - ${errorText}`);
 						return [];
 					}
 
 					const data = await response.json();
 					
+					console.log('🔍 Google Search API response:', {
+						hasItems: !!data.items,
+						itemCount: data.items?.length || 0,
+						hasError: !!data.error,
+						error: data.error
+					});
+					
+					if (data.error) {
+						console.error('❌ Google Search API error:', data.error);
+						return [];
+					}
+					
 					if (!data.items || !Array.isArray(data.items)) {
+						console.warn('⚠️ No items in Google Search response');
 						return [];
 					}
 
@@ -449,9 +497,10 @@ export class VehicleImageService {
 						}
 					}
 
+					console.log(`✅ Google Search returned ${results.length} images`);
 					return results;
 				} catch (fetchError) {
-					console.warn('Google Images fetch error:', fetchError);
+					console.warn('❌ Google Images fetch error:', fetchError);
 					retries++;
 					if (retries < maxRetries) {
 						await new Promise(resolve => setTimeout(resolve, delay));
@@ -460,9 +509,10 @@ export class VehicleImageService {
 				}
 			}
 
+			console.warn('⚠️ Google Search exhausted all retries');
 			return results;
 		} catch (error) {
-			console.warn('Google Images search failed:', error);
+			console.error('❌ Google Images search failed:', error);
 			return [];
 		}
 	}
@@ -483,18 +533,31 @@ export class VehicleImageService {
 			const query = `${year} ${make} ${model} car`;
 			const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&t=vehicle-report`;
 
+			console.log('🦆 DuckDuckGo search query:', { query });
+
 			const response = await fetch(url, {
 				headers: {
 					'User-Agent': 'VehicleReportGenerator/1.0'
 				}
 			});
 
+			console.log('🦆 DuckDuckGo response:', {
+				status: response.status,
+				ok: response.ok
+			});
+
 			if (!response.ok) {
-				console.warn(`DuckDuckGo search failed: ${response.status}`);
+				console.warn(`⚠️ DuckDuckGo search failed: ${response.status}`);
 				return [];
 			}
 
 			const data = await response.json();
+			
+			console.log('🦆 DuckDuckGo data:', {
+				hasImage: !!data.Image,
+				hasRelatedTopics: !!data.RelatedTopics,
+				relatedTopicsCount: data.RelatedTopics?.length || 0
+			});
 			
 			// DuckDuckGo API returns results in various formats
 			// Check for image results in the response
@@ -508,6 +571,7 @@ export class VehicleImageService {
 						description: data.Heading || `${year} ${make} ${model}`
 					}
 				});
+				console.log('✅ DuckDuckGo main image found');
 			}
 
 			// Check for related topics with images
@@ -529,11 +593,12 @@ export class VehicleImageService {
 						}
 					}
 				}
+				console.log(`✅ DuckDuckGo found ${results.length} total images`);
 			}
 
 			return results;
 		} catch (error) {
-			console.warn('DuckDuckGo search failed:', error);
+			console.error('❌ DuckDuckGo search failed:', error);
 			return [];
 		}
 	}

@@ -67,7 +67,9 @@
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.1017.0",
 		"@aws-sdk/s3-request-presigner": "^3.1017.0",
+		"@types/pdfkit": "^0.17.5",
 		"docx": "^9.6.1",
+		"pdfkit": "^0.18.0",
 		"puppeteer": "^24.40.0",
 		"resend": "^6.9.4",
 		"telegraf": "^4.16.3"
