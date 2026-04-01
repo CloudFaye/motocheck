@@ -219,6 +219,13 @@ function createFooter(): Paragraph {
 	return new Paragraph({
 		children: [
 			new TextRun({
+				text: 'OFFICIAL REPORT - FOR REFERENCE ONLY | ',
+				font: DOCX_STYLES.fonts.body,
+				size: 16,
+				bold: true,
+				color: DOCX_STYLES.colors.error
+			}),
+			new TextRun({
 				text: 'Disclaimer: ',
 				font: DOCX_STYLES.fonts.body,
 				size: 16,
@@ -382,7 +389,7 @@ export function createDOCXTable(
 				(row, index) =>
 					new TableRow({
 						children: row.map(
-							(cell, cellIndex) =>
+							(cell) =>
 								new TableCell({
 									children: [
 										new Paragraph({
@@ -398,8 +405,6 @@ export function createDOCXTable(
 									],
 									width: {
 										size: columnWidthPercent,
-										type: WidthType.PERCENTAGE
-									},
 										type: WidthType.PERCENTAGE
 									},
 									shading: {

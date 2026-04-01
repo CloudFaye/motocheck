@@ -329,7 +329,17 @@ async function addVehicleImages(doc: PDFKit.PDFDocument, images: import('../vehi
 	const imageWidth = Math.min(pageWidth * 0.8, 400);
 	
 	// Limit to first 3 images to avoid excessive page length
-	const displayImages = images.slice(0, 3);
+	// Filter out placeholder images (SVG data URIs) as PDFKit doesn't support them
+	const displayImages = images.filter(img => img.source !== 'placeholder').slice(0, 3);
+	
+	if (displayImages.length === 0) {
+		doc.fontSize(10)
+			.fillColor(COLORS.textLight)
+			.font('Helvetica')
+			.text('No vehicle images available', { align: 'center' });
+		doc.moveDown(1);
+		return;
+	}
 	
 	for (const img of displayImages) {
 		try {
