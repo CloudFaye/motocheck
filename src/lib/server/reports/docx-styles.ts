@@ -85,12 +85,12 @@ export const DOCX_STYLES: DOCXStyleConfig = {
     white: 'FFFFFF'         // White
   },
   spacing: {
-    sectionBefore: 400,
-    sectionAfter: 200,
-    paragraphBefore: 120,
-    paragraphAfter: 120,
-    tableBefore: 200,
-    tableAfter: 200
+    sectionBefore: 600,
+    sectionAfter: 300,
+    paragraphBefore: 180,
+    paragraphAfter: 180,
+    tableBefore: 300,
+    tableAfter: 300
   }
 };
 

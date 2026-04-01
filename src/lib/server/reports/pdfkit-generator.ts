@@ -83,8 +83,8 @@ async function buildPDFContent(
 	addHeader(doc, vehicleData);
 
 	// Vehicle Title
-	doc.moveDown(1);
-	doc.fontSize(24)
+	doc.moveDown(1.5);
+	doc.fontSize(20)
 		.fillColor(COLORS.text)
 		.font('Helvetica-Bold')
 		.text(
@@ -92,12 +92,19 @@ async function buildPDFContent(
 			{ align: 'left' }
 		);
 
-	doc.fontSize(11)
+	if (vehicleData.identification.trim) {
+		doc.moveDown(0.3);
+		doc.fontSize(11).fillColor(COLORS.text).font('Helvetica')
+			.text(vehicleData.identification.trim, { align: 'left' });
+	}
+
+	doc.moveDown(0.5);
+	doc.fontSize(10)
 		.fillColor(COLORS.text)
 		.font('Courier')
 		.text(`VIN: ${vehicleData.identification.vin}`, { align: 'left' });
 
-	doc.moveDown(1.5);
+	doc.moveDown(2);
 	addDivider(doc);
 
 	// Vehicle Images (if available) - moved to END
@@ -152,24 +159,31 @@ async function buildPDFContent(
 		]);
 
 		// Total in highlighted box
-		doc.moveDown(0.5);
+		doc.moveDown(1);
 		const totalY = doc.y;
-		doc.rect(doc.page.margins.left, totalY, pageWidth, 32)
-			.fillAndStroke(COLORS.headerBg, COLORS.border);
-
-		doc.fillColor(COLORS.text)
-			.fontSize(11)
+		const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+		
+		// Just use underline, no background
+		doc.fontSize(12)
+			.fillColor(COLORS.text)
 			.font('Helvetica-Bold')
-			.text('TOTAL IMPORT DUTY', doc.page.margins.left + 15, totalY + 10);
+			.text('TOTAL IMPORT DUTY', doc.page.margins.left, totalY);
 
 		doc.fontSize(14)
 			.fillColor(COLORS.text)
 			.text(
 				`NGN ${duty.totalDutyNgn.toLocaleString()}`,
-				doc.page.margins.left + 15,
-				totalY + 10,
-				{ align: 'right', width: pageWidth - 30 }
+				doc.page.margins.left,
+				totalY,
+				{ align: 'right', width: pageWidth }
 			);
+
+		const underlineY = doc.y + 3;
+		doc.moveTo(doc.page.margins.left, underlineY)
+			.lineTo(doc.page.width - doc.page.margins.right, underlineY)
+			.strokeColor(COLORS.text)
+			.lineWidth(2)
+			.stroke();
 
 		doc.moveDown(2.5);
 	}
@@ -223,14 +237,10 @@ async function buildPDFContent(
  * Add header to document
  */
 function addHeader(doc: PDFKit.PDFDocument, vehicleData: ComprehensiveVehicleData): void {
-	doc.fontSize(18)
+	doc.fontSize(16)
 		.fillColor(COLORS.text)
 		.font('Helvetica-Bold')
-		.text('MotoCheck', { continued: true })
-		.fontSize(11)
-		.fillColor(COLORS.text)
-		.font('Helvetica')
-		.text(' | Comprehensive Vehicle History Report');
+		.text('MotoCheck | Comprehensive Vehicle History Report');
 
 	const reportDate = new Date().toLocaleDateString('en-NG', {
 		year: 'numeric',
@@ -239,11 +249,13 @@ function addHeader(doc: PDFKit.PDFDocument, vehicleData: ComprehensiveVehicleDat
 	});
 	const reportId = vehicleData.identification.vin.slice(-8).toUpperCase();
 
+	doc.moveDown(0.3);
 	doc.fontSize(9)
 		.fillColor(COLORS.text)
+		.font('Helvetica')
 		.text(`Report Date: ${reportDate} | Report ID: ${reportId}`);
 
-	doc.moveDown(0.5);
+	doc.moveDown(0.8);
 	addDivider(doc);
 }
 
@@ -252,28 +264,22 @@ function addHeader(doc: PDFKit.PDFDocument, vehicleData: ComprehensiveVehicleDat
  */
 function addSection(doc: PDFKit.PDFDocument, title: string, rows: string[][]): void {
 	addSectionHeader(doc, title);
-	doc.moveDown(0.5);
+	doc.moveDown(0.8);
 
 	const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
 	const labelWidth = pageWidth * 0.45;
 
-	rows.forEach((row, index) => {
+	rows.forEach((row) => {
 		const [label, value] = row;
 		if (!value || value === 'N/A') return;
 
 		const y = doc.y;
 
-		// Alternating background for readability
-		if (index % 2 === 0) {
-			doc.rect(doc.page.margins.left, y - 3, pageWidth, 18)
-				.fill(COLORS.background);
-		}
-
 		// Label (left-aligned, black)
 		doc.fontSize(10)
 			.fillColor(COLORS.text)
 			.font('Helvetica')
-			.text(label, doc.page.margins.left + 10, y, {
+			.text(label, doc.page.margins.left, y, {
 				width: labelWidth,
 				continued: false
 			});
@@ -283,33 +289,33 @@ function addSection(doc: PDFKit.PDFDocument, title: string, rows: string[][]): v
 			.fillColor(COLORS.text)
 			.font('Helvetica-Bold')
 			.text(value, doc.page.margins.left + labelWidth + 10, y, {
-				width: pageWidth - labelWidth - 20,
+				width: pageWidth - labelWidth - 10,
 				align: 'right'
 			});
 
-		doc.moveDown(0.25);
+		doc.moveDown(0.6);
 	});
 
-	doc.moveDown(1);
+	doc.moveDown(1.5);
 }
 
 /**
  * Add section header
  */
 function addSectionHeader(doc: PDFKit.PDFDocument, title: string): void {
-	// Add background bar for section header
-	const y = doc.y;
-	const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-	
-	doc.rect(doc.page.margins.left, y, pageWidth, 24)
-		.fill(COLORS.headerBg);
-
 	doc.fontSize(13)
 		.fillColor(COLORS.text)
 		.font('Helvetica-Bold')
-		.text(title, doc.page.margins.left + 10, y + 6);
+		.text(title);
 
-	doc.moveDown(0.8);
+	const y = doc.y;
+	doc.moveTo(doc.page.margins.left, y + 3)
+		.lineTo(doc.page.width - doc.page.margins.right, y + 3)
+		.strokeColor(COLORS.text)
+		.lineWidth(1)
+		.stroke();
+
+	doc.moveDown(0.3);
 }
 
 /**

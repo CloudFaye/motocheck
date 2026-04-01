@@ -248,7 +248,7 @@ export function buildEmptySectionDOCX(title: string, icon: string = '📋'): (Pa
     new Paragraph({
       children: [
         new TextRun({
-          text: '📋',
+          text: '',
           font: DOCX_STYLES.fonts.body,
           size: 48
         })
@@ -363,7 +363,7 @@ export function buildKeyHighlightsSection(data: ComprehensiveVehicleData): (Para
             children: [
               new Paragraph({
                 children: [
-                  new TextRun({ text: '🚗', size: 32 }),
+                  new TextRun({ text: '', size: 32 }),
                   new TextRun({ text: '\n', size: 8 }),
                   new TextRun({ text: 'Previous Owners', size: 18, font: DOCX_STYLES.fonts.body, color: DOCX_STYLES.colors.textSecondary })
                 ],
@@ -379,7 +379,7 @@ export function buildKeyHighlightsSection(data: ComprehensiveVehicleData): (Para
             children: [
               new Paragraph({
                 children: [
-                  new TextRun({ text: '⚠', size: 32 }),
+                  new TextRun({ text: '', size: 32 }),
                   new TextRun({ text: '\n', size: 8 }),
                   new TextRun({ text: 'Accidents Reported', size: 18, font: DOCX_STYLES.fonts.body, color: DOCX_STYLES.colors.textSecondary })
                 ],
@@ -395,7 +395,7 @@ export function buildKeyHighlightsSection(data: ComprehensiveVehicleData): (Para
             children: [
               new Paragraph({
                 children: [
-                  new TextRun({ text: '🔧', size: 32 }),
+                  new TextRun({ text: '', size: 32 }),
                   new TextRun({ text: '\n', size: 8 }),
                   new TextRun({ text: 'Open Recalls', size: 18, font: DOCX_STYLES.fonts.body, color: DOCX_STYLES.colors.textSecondary })
                 ],
@@ -411,7 +411,7 @@ export function buildKeyHighlightsSection(data: ComprehensiveVehicleData): (Para
             children: [
               new Paragraph({
                 children: [
-                  new TextRun({ text: '🔒', size: 32 }),
+                  new TextRun({ text: '', size: 32 }),
                   new TextRun({ text: '\n', size: 8 }),
                   new TextRun({ text: 'Theft Record', size: 18, font: DOCX_STYLES.fonts.body, color: DOCX_STYLES.colors.textSecondary })
                 ],
@@ -554,7 +554,7 @@ export function buildKeyHighlightsSection(data: ComprehensiveVehicleData): (Para
   });
 
   return [
-    ...createSectionHeader('Key Highlights', '📊'),
+    ...createSectionHeader('Key Highlights'),
     highlightTable,
     new Paragraph({ text: '', spacing: { after: 300 } })
   ];
@@ -564,7 +564,7 @@ export function buildKeyHighlightsSection(data: ComprehensiveVehicleData): (Para
 
 export async function buildVehicleImagesSection(images: ImageResult[]): Promise<(Paragraph | Table)[]> {
   if (!images || images.length === 0) {
-    return buildEmptySectionDOCX('Vehicle Images', '📷');
+    return buildEmptySectionDOCX('Vehicle Images');
   }
 
   const displayImages = images.slice(0, 4);
@@ -612,10 +612,10 @@ export async function buildVehicleImagesSection(images: ImageResult[]): Promise<
   }
 
   if (content.length === 0) {
-    return buildEmptySectionDOCX('Vehicle Images', '📷');
+    return buildEmptySectionDOCX('Vehicle Images');
   }
 
-  return [...createSectionHeader('Vehicle Images', '📷'), ...content];
+  return [...createSectionHeader('Vehicle Images', ''), ...content];
 }
 
 // ===== Vehicle Specifications Section =====
@@ -634,10 +634,10 @@ export function buildSpecificationsSection(data: ComprehensiveVehicleData): (Par
   ].filter(([, value]) => value);
 
   if (specs.length === 0) {
-    return buildEmptySectionDOCX('Vehicle Specifications', '📋');
+    return buildEmptySectionDOCX('Vehicle Specifications');
   }
 
-  return [...createSectionHeader('Vehicle Specifications', '📋'), createDOCXTable(['Specification', 'Value'], specs)];
+  return [...createSectionHeader('Vehicle Specifications', ''), createDOCXTable(['Specification', 'Value'], specs)];
 }
 
 // ===== Engine Section =====
@@ -657,10 +657,10 @@ export function buildEngineSection(data: ComprehensiveVehicleData): (Paragraph |
   ].filter(([, value]) => value);
 
   if (specs.length === 0) {
-    return buildEmptySectionDOCX('Engine & Performance', '⚙️');
+    return buildEmptySectionDOCX('Engine & Performance');
   }
 
-  return [...createSectionHeader('Engine & Performance', '⚙️'), createDOCXTable(['Specification', 'Value'], specs)];
+  return [...createSectionHeader('Engine & Performance', ''), createDOCXTable(['Specification', 'Value'], specs)];
 }
 
 // ===== Transmission Section =====
@@ -674,10 +674,10 @@ export function buildTransmissionSection(data: ComprehensiveVehicleData): (Parag
   ].filter(([, value]) => value);
 
   if (specs.length === 0) {
-    return buildEmptySectionDOCX('Transmission & Drivetrain', '🔄');
+    return buildEmptySectionDOCX('Transmission & Drivetrain');
   }
 
-  return [...createSectionHeader('Transmission & Drivetrain', '🔄'), createDOCXTable(['Specification', 'Value'], specs)];
+  return [...createSectionHeader('Transmission & Drivetrain', ''), createDOCXTable(['Specification', 'Value'], specs)];
 }
 
 // ===== Dimensions Section =====
@@ -693,10 +693,10 @@ export function buildDimensionsSection(data: ComprehensiveVehicleData): (Paragra
   ].filter(([, value]) => value);
 
   if (specs.length === 0) {
-    return buildEmptySectionDOCX('Dimensions & Capacity', '📐');
+    return buildEmptySectionDOCX('Dimensions & Capacity');
   }
 
-  return [...createSectionHeader('Dimensions & Capacity', '📐'), createDOCXTable(['Specification', 'Value'], specs)];
+  return [...createSectionHeader('Dimensions & Capacity', ''), createDOCXTable(['Specification', 'Value'], specs)];
 }
 
 // ===== Safety Section =====
@@ -717,10 +717,10 @@ export function buildSafetySection(data: ComprehensiveVehicleData): (Paragraph |
   ].filter(([, value]) => value);
 
   if (features.length === 0) {
-    return buildEmptySectionDOCX('Safety Features', '🛡️');
+    return buildEmptySectionDOCX('Safety Features');
   }
 
-  return [...createSectionHeader('Safety Features', '🛡️'), createDOCXTable(['Feature', 'Value'], features)];
+  return [...createSectionHeader('Safety Features', ''), createDOCXTable(['Feature', 'Value'], features)];
 }
 
 // ===== Manufacturing Section =====
@@ -737,10 +737,10 @@ export function buildManufacturingSection(data: ComprehensiveVehicleData): (Para
   ].filter(([, value]) => value);
 
   if (specs.length === 0) {
-    return buildEmptySectionDOCX('Manufacturing Information', '🏭');
+    return buildEmptySectionDOCX('Manufacturing Information');
   }
 
-  return [...createSectionHeader('Manufacturing Information', '🏭'), createDOCXTable(['Information', 'Value'], specs)];
+  return [...createSectionHeader('Manufacturing Information', ''), createDOCXTable(['Information', 'Value'], specs)];
 }
 
 // ===== Safety Recalls Section =====
@@ -748,7 +748,7 @@ export function buildManufacturingSection(data: ComprehensiveVehicleData): (Para
 export function buildRecallsSection(data: ComprehensiveVehicleData): (Paragraph | Table)[] {
   if (data.recalls.length === 0) {
     return [
-      ...createSectionHeader('Safety Recalls', '🔧'),
+      ...createSectionHeader('Safety Recalls', ''),
       new Paragraph({
         children: [
           new TextRun({
@@ -869,7 +869,7 @@ export function buildRecallsSection(data: ComprehensiveVehicleData): (Paragraph 
 
 export function buildOwnershipHistorySection(ownership: OwnershipHistory): (Paragraph | Table)[] {
   if (!ownership.owners || ownership.owners.length === 0) {
-    return buildEmptySectionDOCX('Ownership History', '👤');
+    return buildEmptySectionDOCX('Ownership History');
   }
 
   const rows = ownership.owners.map(owner => [
@@ -904,14 +904,14 @@ export function buildOwnershipHistorySection(ownership: OwnershipHistory): (Para
     rows
   ));
 
-  return [...createSectionHeader('Ownership History', '👤'), ...content];
+  return [...createSectionHeader('Ownership History', ''), ...content];
 }
 
 // ===== Sale History Section =====
 
 export function buildSaleHistorySection(sales: SaleHistory): (Paragraph | Table)[] {
   if (!sales.sales || sales.sales.length === 0) {
-    return buildEmptySectionDOCX('Sale History', '💰');
+    return buildEmptySectionDOCX('Sale History');
   }
 
   const rows = sales.sales.map(sale => [
@@ -921,14 +921,14 @@ export function buildSaleHistorySection(sales: SaleHistory): (Paragraph | Table)
     sale.saleType
   ]);
 
-  return [...createSectionHeader('Sale History', '💰'), createDOCXTable(['Date', 'Price', 'Location', 'Type'], rows)];
+  return [...createSectionHeader('Sale History', ''), createDOCXTable(['Date', 'Price', 'Location', 'Type'], rows)];
 }
 
 // ===== Odometer History Section =====
 
 export function buildOdometerHistorySection(odometer: OdometerHistory): (Paragraph | Table)[] {
   if (!odometer.readings || odometer.readings.length === 0) {
-    return buildEmptySectionDOCX('Odometer History', '📊');
+    return buildEmptySectionDOCX('Odometer History');
   }
 
   const content: (Paragraph | Table)[] = [];
@@ -973,14 +973,14 @@ export function buildOdometerHistorySection(odometer: OdometerHistory): (Paragra
 
   content.push(createDOCXTable(['Date', 'Mileage', 'Source', 'Verified'], rows));
 
-  return [...createSectionHeader('Odometer History', '📊'), ...content];
+  return [...createSectionHeader('Odometer History'), ...content];
 }
 
 // ===== Title History Section =====
 
 export function buildTitleHistorySection(titleHistory: TitleHistory): (Paragraph | Table)[] {
   if (!titleHistory.records || titleHistory.records.length === 0) {
-    return buildEmptySectionDOCX('Title History', '📄');
+    return buildEmptySectionDOCX('Title History');
   }
 
   const rows = titleHistory.records.map(record => [
@@ -990,7 +990,7 @@ export function buildTitleHistorySection(titleHistory: TitleHistory): (Paragraph
     record.transferType
   ]);
 
-  return [...createSectionHeader('Title History', '📄'), createDOCXTable(['Date', 'State', 'Title Number', 'Transfer Type'], rows)];
+  return [...createSectionHeader('Title History', ''), createDOCXTable(['Date', 'State', 'Title Number', 'Transfer Type'], rows)];
 }
 
 // ===== Inspection History Section =====
@@ -1000,7 +1000,7 @@ export function buildInspectionHistorySection(inspections: InspectionHistory): (
   const hasSafety = inspections.safety && inspections.safety.length > 0;
 
   if (!hasEmissions && !hasSafety) {
-    return buildEmptySectionDOCX('Inspection History', '🔍');
+    return buildEmptySectionDOCX('Inspection History');
   }
 
   const content: (Paragraph | Table)[] = [];
@@ -1043,14 +1043,14 @@ export function buildInspectionHistorySection(inspections: InspectionHistory): (
     content.push(createDOCXTable(['Date', 'Location', 'Result', 'Notes'], safetyRows));
   }
 
-  return [...createSectionHeader('Inspection History', '🔍'), ...content];
+  return [...createSectionHeader('Inspection History', ''), ...content];
 }
 
 // ===== Insurance History Section =====
 
 export function buildInsuranceHistorySection(insurance: InsuranceHistory): (Paragraph | Table)[] {
   if (!insurance.records || insurance.records.length === 0) {
-    return buildEmptySectionDOCX('Insurance History', '🛡️');
+    return buildEmptySectionDOCX('Insurance History');
   }
 
   const rows = insurance.records.map(record => [
@@ -1060,14 +1060,14 @@ export function buildInsuranceHistorySection(insurance: InsuranceHistory): (Para
     record.status.toUpperCase()
   ]);
 
-  return [...createSectionHeader('Insurance History', '🛡️'), createDOCXTable(['Claim Date', 'Type', 'Amount', 'Status'], rows)];
+  return [...createSectionHeader('Insurance History', ''), createDOCXTable(['Claim Date', 'Type', 'Amount', 'Status'], rows)];
 }
 
 // ===== Junk & Salvage Section =====
 
 export function buildJunkSalvageSection(junkSalvage: JunkSalvageInfo): (Paragraph | Table)[] {
   if (!junkSalvage.records || junkSalvage.records.length === 0) {
-    return buildEmptySectionDOCX('Junk & Salvage Information', '⚠️');
+    return buildEmptySectionDOCX('Junk & Salvage Information');
   }
 
   const content: (Paragraph | Table)[] = [];
@@ -1117,14 +1117,14 @@ export function buildJunkSalvageSection(junkSalvage: JunkSalvageInfo): (Paragrap
 
   content.push(createDOCXTable(['Date', 'Type', 'Reason', 'Auction House'], rows));
 
-  return [...createSectionHeader('Junk & Salvage Information', '⚠️'), ...content];
+  return [...createSectionHeader('Junk & Salvage Information', ''), ...content];
 }
 
 // ===== Accident History Section =====
 
 export function buildAccidentHistorySection(accidents: AccidentHistory): (Paragraph | Table)[] {
   if (!accidents.accidents || accidents.accidents.length === 0) {
-    return buildEmptySectionDOCX('Accident History', '💥');
+    return buildEmptySectionDOCX('Accident History');
   }
 
   const content: (Paragraph | Table)[] = [];
@@ -1201,7 +1201,7 @@ export function buildAccidentHistorySection(accidents: AccidentHistory): (Paragr
     }
   });
 
-  return [...createSectionHeader('Accident History', '💥'), ...content];
+  return [...createSectionHeader('Accident History', ''), ...content];
 }
 
 // ===== Lien & Impound Section =====
@@ -1211,7 +1211,7 @@ export function buildLienImpoundSection(lienImpound: LienImpoundHistory): (Parag
   const hasImpounds = lienImpound.impounds && lienImpound.impounds.length > 0;
 
   if (!hasLiens && !hasImpounds) {
-    return buildEmptySectionDOCX('Lien & Impound Records', '🔒');
+    return buildEmptySectionDOCX('Lien & Impound Records');
   }
 
   const content: (Paragraph | Table)[] = [];
@@ -1254,14 +1254,14 @@ export function buildLienImpoundSection(lienImpound: LienImpoundHistory): (Parag
     content.push(createDOCXTable(['Date', 'Location', 'Reason', 'Release Date'], impoundRows));
   }
 
-  return [...createSectionHeader('Lien & Impound Records', '🔒'), ...content];
+  return [...createSectionHeader('Lien & Impound Records', ''), ...content];
 }
 
 // ===== Theft History Section =====
 
 export function buildTheftHistorySection(theft: TheftHistory): (Paragraph | Table)[] {
   if (!theft.records || theft.records.length === 0) {
-    return buildEmptySectionDOCX('Theft History', '🚓');
+    return buildEmptySectionDOCX('Theft History');
   }
 
   const content: (Paragraph | Table)[] = [];
@@ -1307,14 +1307,14 @@ export function buildTheftHistorySection(theft: TheftHistory): (Paragraph | Tabl
 
   content.push(createDOCXTable(['Report Date', 'Recovery Date', 'Location', 'Status'], rows));
 
-  return [...createSectionHeader('Theft History', '🚓'), ...content];
+  return [...createSectionHeader('Theft History', ''), ...content];
 }
 
 // ===== Title Brands Section =====
 
 export function buildTitleBrandsSection(titleBrands: TitleBrands): (Paragraph | Table)[] {
   if (!titleBrands.brands || titleBrands.brands.length === 0) {
-    return buildEmptySectionDOCX('Title Brands', '🏷️');
+    return buildEmptySectionDOCX('Title Brands');
   }
 
   const content: (Paragraph | Table)[] = [];
@@ -1361,14 +1361,14 @@ export function buildTitleBrandsSection(titleBrands: TitleBrands): (Paragraph | 
 
   content.push(createDOCXTable(['Brand Type', 'Date', 'State', 'Description'], rows));
 
-  return [...createSectionHeader('Title Brands', '🏷️'), ...content];
+  return [...createSectionHeader('Title Brands', ''), ...content];
 }
 
 // ===== Market Value Section =====
 
 export function buildMarketValueSection(marketValue: MarketValue): (Paragraph | Table)[] {
   if (!marketValue) {
-    return buildEmptySectionDOCX('Market Value', '💵');
+    return buildEmptySectionDOCX('Market Value');
   }
 
   const specs = [
@@ -1379,7 +1379,7 @@ export function buildMarketValueSection(marketValue: MarketValue): (Paragraph | 
     ['Mileage Adjustment', marketValue.mileageAdjustment ? `${marketValue.currency} ${marketValue.mileageAdjustment.toLocaleString()}` : 'N/A']
   ];
 
-  return [...createSectionHeader('Market Value', '💵'), createDOCXTable(['Detail', 'Value'], specs)];
+  return [...createSectionHeader('Market Value', ''), createDOCXTable(['Detail', 'Value'], specs)];
 }
 
 // ===== Warranty Section =====
@@ -1389,7 +1389,7 @@ export function buildWarrantySection(warranty: WarrantyInfo): (Paragraph | Table
   const hasExtended = warranty.extended && warranty.extended.length > 0;
 
   if (!hasManufacturer && !hasExtended) {
-    return buildEmptySectionDOCX('Warranty Information', '🔒');
+    return buildEmptySectionDOCX('Warranty Information');
   }
 
   const content: (Paragraph | Table)[] = [];
@@ -1457,7 +1457,7 @@ export function buildWarrantySection(warranty: WarrantyInfo): (Paragraph | Table
     });
   }
 
-  return [...createSectionHeader('Warranty Information', '🔒'), ...content];
+  return [...createSectionHeader('Warranty Information', ''), ...content];
 }
 
 // ===== NCS Valuation Section =====
@@ -1469,12 +1469,12 @@ export function buildNCSValuationSection(options: ReportGenerationOptions): (Par
 
   const rows = [
     ['CIF Value (USD)', `$${options.cifUsd.toLocaleString()}`],
-    ['CIF Value (NGN)', options.cifNgn ? `₦${options.cifNgn.toLocaleString()}` : 'N/A'],
-    ['CBN Exchange Rate', options.cbnRate ? `₦${options.cbnRate.toLocaleString()}/USD` : 'N/A'],
+    ['CIF Value (NGN)', options.cifNgn ? `NGN ${options.cifNgn.toLocaleString()}` : 'N/A'],
+    ['CBN Exchange Rate', options.cbnRate ? `NGN ${options.cbnRate.toLocaleString()}/USD` : 'N/A'],
     ['Confidence Level', options.confidence?.toUpperCase() || 'N/A']
   ];
 
-  return [...createSectionHeader('NCS Valuation', '💰'), createDOCXTable(['Detail', 'Value'], rows)];
+  return [...createSectionHeader('NCS Valuation', ''), createDOCXTable(['Detail', 'Value'], rows)];
 }
 
 // ===== Duty Breakdown Section =====
@@ -1487,12 +1487,12 @@ export function buildDutyBreakdownSection(options: ReportGenerationOptions): (Pa
   const duty = options.dutyBreakdown;
 
   const rows = [
-    ['Import Duty (35%)', `₦${duty.importDuty.toLocaleString()}`],
-    ['Surcharge (7%)', `₦${duty.surcharge.toLocaleString()}`],
-    ['NAC Levy (20%)', `₦${duty.nacLevy.toLocaleString()}`],
-    ['CISS (1%)', `₦${duty.ciss.toLocaleString()}`],
-    ['ETLS (0.5%)', `₦${duty.etls.toLocaleString()}`],
-    ['VAT (7.5%)', `₦${duty.vat.toLocaleString()}`]
+    ['Import Duty (35%)', `NGN ${duty.importDuty.toLocaleString()}`],
+    ['Surcharge (7%)', `NGN ${duty.surcharge.toLocaleString()}`],
+    ['NAC Levy (20%)', `NGN ${duty.nacLevy.toLocaleString()}`],
+    ['CISS (1%)', `NGN ${duty.ciss.toLocaleString()}`],
+    ['ETLS (0.5%)', `NGN ${duty.etls.toLocaleString()}`],
+    ['VAT (7.5%)', `NGN ${duty.vat.toLocaleString()}`]
   ];
 
   const content: (Paragraph | Table)[] = [createDOCXTable(['Duty Component', 'Amount'], rows)];
@@ -1509,7 +1509,7 @@ export function buildDutyBreakdownSection(options: ReportGenerationOptions): (Pa
           color: DOCX_STYLES.colors.white
         }),
         new TextRun({
-          text: `₦${duty.totalDutyNgn.toLocaleString()}`,
+          text: `NGN ${duty.totalDutyNgn.toLocaleString()}`,
           font: DOCX_STYLES.fonts.monospace,
           size: 26,
           bold: true,
@@ -1524,5 +1524,5 @@ export function buildDutyBreakdownSection(options: ReportGenerationOptions): (Pa
     })
   );
 
-  return [...createSectionHeader('Nigerian Import Duty Breakdown', '📊'), ...content];
+  return [...createSectionHeader('Nigerian Import Duty Breakdown'), ...content];
 }
