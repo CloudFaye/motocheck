@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, jsonb, numeric, timestamp, serial, text, integer, boolean, pgEnum, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, jsonb, numeric, timestamp, serial, text, integer, boolean, pgEnum, index, unique } from 'drizzle-orm/pg-core';
 
 // ============================================================================
 // ENUMS for Pipeline Architecture
