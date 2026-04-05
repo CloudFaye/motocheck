@@ -27,20 +27,30 @@ export async function normalizeNhtsaDecode(
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	_rawHtml: string | null
 ): Promise<NormalizedVehicleRecord> {
-	// The raw data is already the ComprehensiveVehicleData from the existing decoder
-	const vehicleData = rawJson as ComprehensiveVehicleData;
+	// The raw data is the NHTSA API response format: { Results: [...] }
+	const nhtsaResponse = rawJson as { Results?: Array<{ Variable: string; Value: string | null }> };
 	
-	// Extract vehicle identity fields
+	if (!nhtsaResponse.Results || !Array.isArray(nhtsaResponse.Results)) {
+		throw new Error('Invalid NHTSA decode response format');
+	}
+	
+	// Helper to extract value by variable name
+	const getValue = (variableName: string): string | undefined => {
+		const result = nhtsaResponse.Results?.find(r => r.Variable === variableName);
+		return result?.Value || undefined;
+	};
+	
+	// Extract vehicle identity fields from NHTSA Results array
 	const identity: VehicleIdentity = {
-		year: parseInt(vehicleData.identification.modelYear) || 0,
-		make: vehicleData.identification.make || '',
-		model: vehicleData.identification.model || '',
-		trim: vehicleData.identification.trim || undefined,
-		bodyStyle: vehicleData.body.bodyClass || undefined,
-		engineDescription: vehicleData.engine.model || 
-			`${vehicleData.engine.displacementL || ''} ${vehicleData.engine.configuration || ''}`.trim() || undefined,
-		driveType: vehicleData.transmission.driveType || undefined,
-		fuelType: vehicleData.engine.fuelTypePrimary || undefined
+		year: parseInt(getValue('Model Year') || '0') || 0,
+		make: getValue('Make') || '',
+		model: getValue('Model') || '',
+		trim: getValue('Trim') || undefined,
+		bodyStyle: getValue('Body Class') || undefined,
+		engineDescription: getValue('Engine Model') || 
+			`${getValue('Displacement (L)') || ''} ${getValue('Engine Configuration') || ''}`.trim() || undefined,
+		driveType: getValue('Drive Type') || undefined,
+		fuelType: getValue('Fuel Type - Primary') || undefined
 	};
 	
 	// NHTSA decode doesn't produce events, just vehicle identity
@@ -72,17 +82,39 @@ export async function normalizeNhtsaRecalls(
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	_rawHtml: string | null
 ): Promise<NormalizedVehicleRecord> {
-	// The raw data is already the ComprehensiveVehicleData from the existing decoder
-	const vehicleData = rawJson as ComprehensiveVehicleData;
+	// The raw data is the NHTSA recalls API response format
+	const nhtsaResponse = rawJson as { results?: Array<{
+		Component?: string;
+		Summary?: string;
+		Consequence?: string;
+		Remedy?: string;
+		ReportReceivedDate?: string;
+		NHTSACampaignNumber?: string;
+	}> };
+	
+	// Handle empty results (no recalls found)
+	if (!nhtsaResponse.results || !Array.isArray(nhtsaResponse.results) || nhtsaResponse.results.length === 0) {
+		return {
+			vin,
+			source: 'nhtsa_recalls',
+			identity: undefined,
+			events: [],
+			odometerReadings: [],
+			titleBrands: [],
+			recalls: [],
+			marketValue: undefined,
+			damageRecords: undefined
+		};
+	}
 	
 	// Extract recalls
-	const recalls: RecallRecord[] = vehicleData.recalls.map(recall => ({
-		component: recall.component,
-		summary: recall.summary,
-		consequence: recall.consequence,
-		remedy: recall.remedy,
-		reportReceivedDate: recall.reportReceivedDate,
-		nhtsaCampaignNumber: recall.nhtsaCampaignNumber
+	const recalls: RecallRecord[] = nhtsaResponse.results.map(recall => ({
+		component: recall.Component || 'Unknown',
+		summary: recall.Summary || '',
+		consequence: recall.Consequence || '',
+		remedy: recall.Remedy || '',
+		reportReceivedDate: recall.ReportReceivedDate || '',
+		nhtsaCampaignNumber: recall.NHTSACampaignNumber || ''
 	}));
 	
 	// Create recall events for timeline

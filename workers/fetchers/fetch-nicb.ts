@@ -115,7 +115,40 @@ async function processFetchNICB(job: Job): Promise<void> {
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 		
-		// Store error in raw_data table
+		// Check if it's a 403 error (rate limited or blocked)
+		const is403Error = errorMessage.includes('403');
+		
+		if (is403Error) {
+			// 403 errors mean we're blocked/rate limited - treat as optional source
+			await db.insert(rawData).values({
+				vin,
+				source: 'nicb',
+				rawJson: {},
+				success: false,
+				errorMessage: 'NICB API blocked (403 Forbidden) - optional source',
+			}).onConflictDoUpdate({
+				target: [rawData.vin, rawData.source],
+				set: {
+					fetchedAt: new Date(),
+					success: false,
+					errorMessage: 'NICB API blocked (403 Forbidden) - optional source',
+				},
+			});
+			
+			// Log as completed (not failed) since it's optional
+			await db.insert(pipelineLog).values({
+				vin,
+				stage: 'fetch-nicb',
+				status: 'completed',
+				message: 'NICB API blocked (403 Forbidden) - optional source, continuing pipeline',
+			});
+			
+			console.log(`[fetch-nicb] NICB API blocked for VIN ${vin} (403) - continuing as optional source`);
+			
+			return; // Don't throw error, just skip
+		}
+		
+		// For other errors, store as failed
 		await db.insert(rawData).values({
 			vin,
 			source: 'nicb',

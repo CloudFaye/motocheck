@@ -110,7 +110,49 @@ async function processFetchNHTSARecalls(job: Job): Promise<void> {
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 		
-		// Store error in raw_data table
+		// Check if it's a 400 error (invalid VIN format or no recalls found)
+		const is400Error = errorMessage.includes('400');
+		
+		if (is400Error) {
+			// 400 errors are expected for some VINs (no recalls or invalid format)
+			// Store as successful with empty data
+			await db.insert(rawData).values({
+				vin,
+				source: 'nhtsa_recalls',
+				rawJson: { results: [] }, // Empty results
+				success: true,
+				errorMessage: null,
+			}).onConflictDoUpdate({
+				target: [rawData.vin, rawData.source],
+				set: {
+					rawJson: { results: [] },
+					fetchedAt: new Date(),
+					success: true,
+					errorMessage: null,
+				},
+			});
+			
+			// Log as completed (not failed)
+			await db.insert(pipelineLog).values({
+				vin,
+				stage: 'fetch-nhtsa-recalls',
+				status: 'completed',
+				message: 'No recalls found or invalid VIN format (400 response)',
+			});
+			
+			console.log(`[fetch-nhtsa-recalls] No recalls found for VIN ${vin} (400 response)`);
+			
+			// Enqueue normalization with empty data
+			const queue = await getQueue();
+			await queue.send(Jobs.NORMALIZE, {
+				vin,
+				source: 'nhtsa_recalls',
+			});
+			
+			return; // Don't throw error
+		}
+		
+		// For other errors, store as failed
 		await db.insert(rawData).values({
 			vin,
 			source: 'nhtsa_recalls',

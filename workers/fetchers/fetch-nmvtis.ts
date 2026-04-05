@@ -69,6 +69,40 @@ export async function handleFetchNMVTIS(jobs: Job[]): Promise<void> {
 async function processFetchNMVTIS(job: Job): Promise<void> {
 	const { vin } = job.data;
 	
+	// Check if NMVTIS API is configured (optional source)
+	const apiUrl = process.env.NMVTIS_API_URL;
+	const apiKey = process.env.NMVTIS_API_KEY;
+	
+	if (!apiUrl || !apiKey) {
+		console.log(`[fetch-nmvtis] Skipping VIN ${vin} - NMVTIS API not configured (optional source)`);
+		
+		// Store as skipped in raw_data
+		await db.insert(rawData).values({
+			vin,
+			source: 'nmvtis',
+			rawJson: {},
+			success: false,
+			errorMessage: 'NMVTIS API not configured (optional source)',
+		}).onConflictDoUpdate({
+			target: [rawData.vin, rawData.source],
+			set: {
+				fetchedAt: new Date(),
+				success: false,
+				errorMessage: 'NMVTIS API not configured (optional source)',
+			},
+		});
+		
+		// Log as skipped (not failed)
+		await db.insert(pipelineLog).values({
+			vin,
+			stage: 'fetch-nmvtis',
+			status: 'completed',
+			message: 'Skipped - NMVTIS API not configured (optional source)',
+		});
+		
+		return; // Don't throw error, just skip
+	}
+	
 	// Log pipeline progress: started
 	await db.insert(pipelineLog).values({
 		vin,
