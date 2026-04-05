@@ -177,7 +177,8 @@ export const rawData = pgTable('raw_data', {
 	errorMessage: text('error_message')
 }, (table) => ({
 	vinIdx: index('raw_data_vin_idx').on(table.vin),
-	vinSourceIdx: index('raw_data_vin_source_idx').on(table.vin, table.source)
+	vinSourceIdx: index('raw_data_vin_source_idx').on(table.vin, table.source),
+	vinSourceUnique: unique('raw_data_vin_source_unique').on(table.vin, table.source)
 }));
 
 /**
@@ -191,7 +192,8 @@ export const normalizedData = pgTable('normalized_data', {
 	data: jsonb('data').notNull()  // conforms to NormalizedVehicleRecord
 }, (table) => ({
 	vinIdx: index('normalized_data_vin_idx').on(table.vin),
-	vinSourceIdx: index('normalized_data_vin_source_idx').on(table.vin, table.source)
+	vinSourceIdx: index('normalized_data_vin_source_idx').on(table.vin, table.source),
+	vinSourceUnique: unique('normalized_data_vin_source_unique').on(table.vin, table.source)
 }));
 
 /**
