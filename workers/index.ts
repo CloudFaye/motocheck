@@ -10,7 +10,7 @@
  * Requirements: 25.1-25.8, 86.1-86.5, 60.1-60.3, 28.1-28.4
  */
 
-import { getQueue, stopQueue } from '../src/lib/server/queue/index.js';
+import { getQueue, stopQueue, createAllQueues } from '../src/lib/server/queue/index.js';
 
 // Import fetcher workers (Requirement 25.1)
 import { registerFetchNHTSADecodeWorker } from './fetchers/fetch-nhtsa-decode.js';
@@ -56,6 +56,9 @@ async function registerAllWorkers(): Promise<void> {
 	// Log pg-boss version on startup (Requirement 25.8, 86.5)
 	const pgBossVersion = '12.15.0'; // From package.json
 	console.log(`[workers] pg-boss version: ${pgBossVersion}`);
+	
+	// Create all queues before registering workers
+	await createAllQueues();
 	
 	try {
 		// Register fetcher workers (4 workers)

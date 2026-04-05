@@ -26,23 +26,12 @@ export async function getQueue(): Promise<PgBoss> {
 	const boss = new PgBoss({
 		connectionString: DATABASE_URL,
 		
-		// Retry configuration (Requirement 2.1, 23.2)
-		retryLimit: 3,
-		retryDelay: 30, // 30 seconds base delay
-		retryBackoff: true, // Exponential backoff
-		
-		// Job expiration (Requirement 2.2, 48.1)
-		expireInSeconds: 60 * 10, // 10 minutes
-		
-		// Job retention (Requirement 2.3, 49.1, 49.2)
-		retentionDays: 3, // Completed jobs retained for 3 days
-		archiveCompletedAfterSeconds: 60 * 60 * 24 * 3, // 3 days
-		
-		// Failed job retention (Requirement 49.3)
-		deleteAfterDays: 7, // Failed jobs retained for 7 days
-		
 		// Connection pool settings
 		max: 10, // Max 10 connections for queue
+		
+		// Maintenance settings
+		supervise: true,
+		maintenanceIntervalSeconds: 60,
 	});
 
 	// Error event logging (Requirement 2.6)
@@ -66,6 +55,47 @@ export async function getQueue(): Promise<PgBoss> {
 
 	queueInstance = boss;
 	return boss;
+}
+
+/**
+ * Create all queues needed by the worker pipeline
+ * Must be called before workers start listening
+ */
+export async function createAllQueues(): Promise<void> {
+	const queue = await getQueue();
+	
+	const queueNames = [
+		'fetch-nhtsa-decode',
+		'fetch-nhtsa-recalls',
+		'fetch-nmvtis',
+		'fetch-nicb',
+		'scrape-copart',
+		'scrape-iaai',
+		'scrape-autotrader',
+		'scrape-cargurus',
+		'normalize',
+		'stitch-report',
+		'llm-analyze',
+		'llm-write-sections',
+	];
+	
+	console.log('[pg-boss] Creating queues...');
+	
+	// Queue-level options (Requirement 2.1, 2.2, 2.3, 23.2, 48.1, 49.1, 49.2, 49.3)
+	const queueOptions = {
+		retryLimit: 3, // 3 retry attempts
+		retryDelay: 30, // 30 seconds base delay
+		retryBackoff: true, // Exponential backoff
+		expireInSeconds: 60 * 10, // 10 minutes for active jobs
+		retentionSeconds: 60 * 60 * 24 * 14, // 14 days for pending jobs
+		deleteAfterSeconds: 60 * 60 * 24 * 7, // 7 days for completed/failed jobs
+	};
+	
+	for (const queueName of queueNames) {
+		await queue.createQueue(queueName, queueOptions);
+	}
+	
+	console.log(`[pg-boss] Created ${queueNames.length} queues`);
 }
 
 /**
