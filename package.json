@@ -7,7 +7,7 @@
 		"dev": "concurrently \"vite dev\" \"pnpm workers\"",
 		"dev:web": "vite dev",
 		"workers": "tsx workers/index.ts",
-		"workers:prod": "node --loader tsx workers/index.ts",
+		"workers:prod": "node --import tsx workers/index.ts",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
