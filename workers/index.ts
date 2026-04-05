@@ -57,45 +57,6 @@ async function registerAllWorkers(): Promise<void> {
 	const pgBossVersion = '12.15.0'; // From package.json
 	console.log(`[workers] pg-boss version: ${pgBossVersion}`);
 	
-	// Import job names
-	const { Jobs } = await import('../src/lib/server/queue/job-names.js');
-	
-	// Create all queues explicitly before registering workers
-	// This ensures queues exist before the web app tries to send jobs
-	console.log('[workers] Creating queues...');
-	const allQueueNames = [
-		Jobs.FETCH_NHTSA_DECODE,
-		Jobs.FETCH_NHTSA_RECALLS,
-		Jobs.FETCH_NMVTIS,
-		Jobs.FETCH_NICB,
-		Jobs.SCRAPE_COPART,
-		Jobs.SCRAPE_IAAI,
-		Jobs.SCRAPE_AUTOTRADER,
-		Jobs.SCRAPE_CARGURUS,
-		Jobs.NORMALIZE,
-		Jobs.STITCH_REPORT,
-		Jobs.LLM_ANALYZE,
-		Jobs.LLM_WRITE_SECTIONS,
-	];
-	
-	// Use pg-boss's internal method to ensure queues exist
-	// We'll send a test job with immediate expiration to force queue creation
-	for (const queueName of allQueueNames) {
-		try {
-			// Send a job that expires immediately to create the queue
-			await queue.send(queueName, { _init: true }, { 
-				expireInSeconds: 1,
-				retryLimit: 0 
-			});
-			console.log(`[workers] ✓ Queue ${queueName} created`);
-		} catch (error: any) {
-			console.log(`[workers] ⚠ Queue ${queueName}: ${error.message}`);
-		}
-	}
-	
-	// Small delay to ensure queue creation is committed
-	await new Promise(resolve => setTimeout(resolve, 1000));
-	
 	try {
 		// Register fetcher workers (4 workers)
 		console.log('[workers] Registering fetcher workers...');
@@ -132,7 +93,7 @@ async function registerAllWorkers(): Promise<void> {
 		// Log total number of registered workers (Requirement 25.7, 86.4)
 		const totalWorkers = 13;
 		console.log(`[workers] ✓ Successfully registered ${totalWorkers} workers`);
-		console.log('[workers] All queues created and workers ready to process jobs');
+		console.log('[workers] Worker process is ready to process jobs');
 		
 	} catch (error) {
 		// Exit with error code 1 if registration fails (Requirement 25.8, 86.5)

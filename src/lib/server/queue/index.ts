@@ -47,11 +47,6 @@ export async function getQueue(): Promise<PgBoss> {
 
 	// Error event logging (Requirement 2.6)
 	boss.on('error', (error) => {
-		// Suppress "Queue does not exist" errors - these are expected during startup
-		// as workers poll for jobs before queues are created
-		if (error.message && error.message.includes('does not exist')) {
-			return;
-		}
 		console.error('[pg-boss] Queue error:', error);
 	});
 
