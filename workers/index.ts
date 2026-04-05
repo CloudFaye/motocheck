@@ -57,6 +57,37 @@ async function registerAllWorkers(): Promise<void> {
 	const pgBossVersion = '12.15.0'; // From package.json
 	console.log(`[workers] pg-boss version: ${pgBossVersion}`);
 	
+	// Import job names
+	const { Jobs } = await import('../src/lib/server/queue/job-names.js');
+	
+	// Pre-create all queues to avoid race conditions with web app
+	console.log('[workers] Pre-creating queues...');
+	const allQueueNames = [
+		Jobs.FETCH_NHTSA_DECODE,
+		Jobs.FETCH_NHTSA_RECALLS,
+		Jobs.FETCH_NMVTIS,
+		Jobs.FETCH_NICB,
+		Jobs.SCRAPE_COPART,
+		Jobs.SCRAPE_IAAI,
+		Jobs.SCRAPE_AUTOTRADER,
+		Jobs.SCRAPE_CARGURUS,
+		Jobs.NORMALIZE,
+		Jobs.STITCH_REPORT,
+		Jobs.LLM_ANALYZE,
+		Jobs.LLM_WRITE_SECTIONS,
+	];
+	
+	// Send a dummy job to each queue to ensure it exists, then delete it
+	for (const queueName of allQueueNames) {
+		try {
+			const jobId = await queue.send(queueName, { _init: true }, { retryLimit: 0, expireInSeconds: 1 });
+			await queue.cancel(jobId);
+			console.log(`[workers] ✓ Queue ${queueName} initialized`);
+		} catch (error) {
+			console.log(`[workers] ⚠ Queue ${queueName} initialization skipped (may already exist)`);
+		}
+	}
+	
 	try {
 		// Register fetcher workers (4 workers)
 		console.log('[workers] Registering fetcher workers...');
