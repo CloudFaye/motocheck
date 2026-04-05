@@ -4,7 +4,10 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "vite dev",
+		"dev": "concurrently \"vite dev\" \"pnpm workers\"",
+		"dev:web": "vite dev",
+		"workers": "tsx workers/index.ts",
+		"workers:prod": "node --loader tsx workers/index.ts",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
@@ -21,7 +24,8 @@
 		"db:studio": "drizzle-kit studio",
 		"db:clear-invalid": "source .env && psql \"$DATABASE_URL\" -f clear-invalid-vins.sql",
 		"generate:sample-pdf": "npx tsx generate-sample-pdf.ts",
-		"bot:setup": "tsx src/telegram-bot/start.ts"
+		"bot:setup": "tsx src/telegram-bot/start.ts",
+		"test:vin": "tsx scripts/test-vin.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "latest",
@@ -39,6 +43,7 @@
 		"@vitest/ui": "^4.1.1",
 		"bits-ui": "^2.16.3",
 		"clsx": "^2.1.1",
+		"concurrently": "^9.2.1",
 		"dotenv": "^17.3.1",
 		"drizzle-kit": "^0.31.8",
 		"drizzle-orm": "^0.45.1",
@@ -65,11 +70,17 @@
 		"vitest": "^4.1.1"
 	},
 	"dependencies": {
+		"@anthropic-ai/sdk": "^0.82.0",
 		"@aws-sdk/client-s3": "^3.1017.0",
 		"@aws-sdk/s3-request-presigner": "^3.1017.0",
+		"@google/generative-ai": "^0.24.1",
 		"@types/pdfkit": "^0.17.5",
 		"docx": "^9.6.1",
+		"got": "^15.0.0",
 		"pdfkit": "^0.18.0",
+		"pg-boss": "^12.15.0",
+		"puppeteer-extra": "^3.3.6",
+		"puppeteer-extra-plugin-stealth": "^2.11.2",
 		"resend": "^6.9.4",
 		"telegraf": "^4.16.3"
 	}
