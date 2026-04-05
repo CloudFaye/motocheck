@@ -3,24 +3,7 @@ import { handlePaystackWebhook } from '$lib/server/webhook-handler';
 import { db } from '$lib/server/db';
 import { orders, reports, lookups } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateVehicleReport } from '$lib/server/reports/generator';
-import { uploadReport } from '$lib/server/storage-service';
-import { sendReport } from '$lib/server/email-service';
-import { config } from '$lib/server/config';
-import { VehicleImageService } from '$lib/server/vehicle-image-service';
-import type { ComprehensiveVehicleData } from '$lib/server/vehicle/types';
 import type { RequestHandler } from '@sveltejs/kit';
-
-interface DutyData {
-	cifNgn: number;
-	importDuty: number;
-	surcharge: number;
-	nacLevy: number;
-	ciss: number;
-	etls: number;
-	vat: number;
-	totalDutyNgn: number;
-}
 
 export const POST: RequestHandler = async ({ request }) => {
 	const signature = request.headers.get('x-paystack-signature') || '';
@@ -105,117 +88,39 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const lookupData = lookup[0];
-		const vehicleData = lookupData.decodedJson as ComprehensiveVehicleData;
-		const duty = lookupData.dutyJson as DutyData;
+		const vin = lookupData.vin;
 
-		console.log('📄 Generating reports for VIN:', lookupData.vin);
+		console.log('📄 Initiating queue-based report generation for VIN:', vin);
 
-		// Fetch vehicle images
-		console.log('🖼️ Fetching vehicle images...');
-		const imageService = new VehicleImageService();
-		try {
-			const images = await imageService.searchImages({
-				vin: vehicleData.identification.vin,
-				make: vehicleData.identification.make,
-				model: vehicleData.identification.model,
-				year: vehicleData.identification.modelYear,
-				maxResults: 5
-			});
-			vehicleData.images = images;
-			console.log(`✅ Found ${images.length} images (sources: ${images.map(i => i.source).join(', ')})`);
-		} catch (imageError) {
-			console.warn('⚠️ Image fetch failed, continuing without images:', imageError);
-			vehicleData.images = [];
-		}
+		// Trigger queue-based report generation pipeline
+		const { getQueue } = await import('$lib/server/queue');
+		const { Jobs } = await import('$lib/server/queue/job-names');
+		const queue = await getQueue();
 
-		// Generate both PDF and DOCX reports
-		const reportOptions = {
-			includeNCSValuation: true,
-			includeDutyBreakdown: true,
-			cifUsd: Number(lookupData.ncsValuationUsd),
-			cifNgn: duty.cifNgn,
-			confidence: lookupData.valuationConfidence,
-			dutyBreakdown: {
-				importDuty: duty.importDuty,
-				surcharge: duty.surcharge,
-				nacLevy: duty.nacLevy,
-				ciss: duty.ciss,
-				etls: duty.etls,
-				vat: duty.vat,
-				totalDutyNgn: duty.totalDutyNgn
-			},
-			cbnRate: Number(lookupData.cbnRateNgn)
-		};
+		// Enqueue jobs for all required sources
+		const requiredJobs = [
+			{ name: Jobs.FETCH_NHTSA_DECODE, data: { vin } },
+			{ name: Jobs.FETCH_NHTSA_RECALLS, data: { vin } },
+			{ name: Jobs.FETCH_NMVTIS, data: { vin } },
+			{ name: Jobs.FETCH_NICB, data: { vin } },
+			{ name: Jobs.SCRAPE_COPART, data: { vin } },
+			{ name: Jobs.SCRAPE_IAAI, data: { vin } },
+		];
 
-		const [docxReport, pdfReport] = await Promise.all([
-			generateVehicleReport(vehicleData, { ...reportOptions, format: 'docx' }),
-			generateVehicleReport(vehicleData, { ...reportOptions, format: 'pdf' })
+		// Enqueue jobs for all optional sources
+		const optionalJobs = [
+			{ name: Jobs.SCRAPE_AUTOTRADER, data: { vin } },
+			{ name: Jobs.SCRAPE_CARGURUS, data: { vin } },
+		];
+
+		// Enqueue all jobs in parallel
+		await Promise.all([
+			...requiredJobs.map(job => queue.send(job.name, job.data)),
+			...optionalJobs.map(job => queue.send(job.name, job.data)),
 		]);
 
-		console.log('✅ Both reports generated, uploading to R2...');
-
-		// Upload both reports to R2
-		const docxReportId = crypto.randomUUID();
-		const pdfReportId = crypto.randomUUID();
-
-		const [docxStorage, pdfStorage] = await Promise.all([
-			uploadReport(docxReportId, docxReport.buffer, docxReport.format),
-			uploadReport(pdfReportId, pdfReport.buffer, pdfReport.format)
-		]);
-
-		console.log('✅ Reports uploaded:', { docx: docxStorage.r2Key, pdf: pdfStorage.r2Key });
-
-		// Save both report records
-		await db.insert(reports).values([
-			{
-				id: docxReportId,
-				orderId: orderRecord.id,
-				r2Key: docxStorage.r2Key,
-				documentHash: docxReport.hash,
-				format: docxReport.format,
-				signedUrl: '',
-				sentAt: new Date()
-			},
-			{
-				id: pdfReportId,
-				orderId: orderRecord.id,
-				r2Key: pdfStorage.r2Key,
-				documentHash: pdfReport.hash,
-				format: pdfReport.format,
-				signedUrl: '',
-				sentAt: new Date()
-			}
-		]);
-
-		console.log('✅ Report records saved');
-
-		// Send email or Telegram with both formats
-		if (orderRecord.source === 'web') {
-			console.log('📧 Sending email notification with both formats as attachments');
-			await sendReport(orderRecord.email, docxReportId, lookupData.vin, docxReport.buffer, pdfReport.buffer);
-			console.log('✅ Email sent');
-		} else if (orderRecord.source === 'telegram' && orderRecord.telegramChatId) {
-			console.log('📱 Sending both formats to Telegram');
-			const { bot } = await import('../../../../telegram-bot');
-			
-			// Send both documents to Telegram
-			await Promise.all([
-				bot.telegram.sendDocument(orderRecord.telegramChatId, {
-					source: docxReport.buffer,
-					filename: `motocheck-report-${lookupData.vin}.docx`
-				}, {
-					caption: '📄 Word Document (editable)'
-				}),
-				bot.telegram.sendDocument(orderRecord.telegramChatId, {
-					source: pdfReport.buffer,
-					filename: `motocheck-report-${lookupData.vin}.pdf`
-				}, {
-					caption: '📕 PDF Document'
-				})
-			]);
-			
-			console.log('✅ Telegram messages sent');
-		}
+		console.log('✅ Queue jobs enqueued for VIN:', vin);
+		console.log('ℹ️ Report will be generated by worker pipeline and delivered when complete')
 
 		console.log('🎉 Webhook processing complete');
 	} catch (error) {
