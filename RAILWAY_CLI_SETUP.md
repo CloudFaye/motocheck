@@ -69,7 +69,7 @@ NODE_ENV=production
 
 # Optional but recommended
 NICB_API_KEY=your_nicb_key
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.5-flash
 WORKER_CONCURRENCY=5
 SCRAPER_CONCURRENCY=2
 

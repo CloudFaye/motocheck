@@ -49,7 +49,7 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 
 **New Optional**:
 ```bash
-GEMINI_MODEL=gemini-1.5-flash  # default
+GEMINI_MODEL=gemini-2.5-flash  # default
 ANTHROPIC_MODEL=claude-sonnet-4-20250514  # default
 ```
 
@@ -131,9 +131,9 @@ pnpm test:vin WBXHT3Z34G4A47548
 Look for these log messages:
 
 ```
-[llm-analyze] Using gemini (gemini-1.5-flash) for VIN: XXXXX
+[llm-analyze] Using gemini (gemini-2.5-flash) for VIN: XXXXX
 [llm-analyze] Analysis completed for VIN: XXXXX using gemini
-[llm-write-sections] Section generated: summary using gemini (gemini-1.5-flash)
+[llm-write-sections] Section generated: summary using gemini (gemini-2.5-flash)
 ```
 
 ## Rollback Plan
@@ -164,19 +164,19 @@ Based on testing:
 ## Recommendations
 
 ### For Development
-✅ Use Gemini free tier (`gemini-1.5-flash`)
+✅ Use Gemini free tier (`gemini-2.5-flash`)
 - Fast iteration
 - No cost
 - Good quality
 
 ### For Small Production (<100 reports/day)
-✅ Use Gemini free tier (`gemini-1.5-flash`)
+✅ Use Gemini free tier (`gemini-2.5-flash`)
 - Stays within free limits
 - No cost
 - Production-ready quality
 
 ### For Medium Production (100-1000 reports/day)
-✅ Use Gemini paid tier (`gemini-1.5-flash`)
+✅ Use Gemini paid tier (`gemini-2.5-flash`)
 - Very affordable ($0.075-0.30 per 1M tokens)
 - Fast responses
 - Excellent quality
@@ -216,7 +216,7 @@ The platform now supports both free (Gemini) and paid (Anthropic) LLM providers 
 ```bash
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=your_free_gemini_key
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 This gives you 100-150 free reports per day with excellent quality! 🎉

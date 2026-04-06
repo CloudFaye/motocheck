@@ -22,7 +22,7 @@ The vehicle history platform supports multiple LLM providers with easy switching
 # Railway Environment Variables
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-1.5-flash  # optional, this is the default
+GEMINI_MODEL=gemini-2.5-flash  # optional, this is the default
 ```
 
 ### Using Anthropic (Paid)
@@ -71,7 +71,7 @@ The platform uses a unified LLM service (`src/lib/server/llm/index.ts`) that:
 
 ```bash
 # Fast, recommended for production (default)
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.5-flash
 
 # Higher quality, slower
 GEMINI_MODEL=gemini-1.5-pro
@@ -94,8 +94,8 @@ ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 Worker logs will show which provider is being used:
 
 ```
-[llm-analyze] Using gemini (gemini-1.5-flash) for VIN: XXXXX
-[llm-write-sections] Section generated: summary using gemini (gemini-1.5-flash)
+[llm-analyze] Using gemini (gemini-2.5-flash) for VIN: XXXXX
+[llm-write-sections] Section generated: summary using gemini (gemini-2.5-flash)
 ```
 
 ### Token Usage

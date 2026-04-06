@@ -48,8 +48,8 @@ Visit: https://makersuite.google.com/app/apikey
 After deployment, check the worker logs for:
 
 ```
-[llm-analyze] Using gemini (gemini-1.5-flash) for VIN: XXXXX
-[llm-write-sections] Section generated: summary using gemini (gemini-1.5-flash)
+[llm-analyze] Using gemini (gemini-2.5-flash) for VIN: XXXXX
+[llm-write-sections] Section generated: summary using gemini (gemini-2.5-flash)
 ```
 
 ## Free Tier Limits
@@ -90,7 +90,7 @@ If you prefer to use Claude instead:
 
 ### Gemini Models
 
-**gemini-1.5-flash** (default, recommended)
+**gemini-2.5-flash** (default, recommended)
 - Fastest responses
 - Best for production use
 - Free tier: 15 RPM, 1M tokens/day
@@ -137,7 +137,7 @@ You've hit the free tier limits:
 ## Best Practices
 
 ### For Development
-- Use `gemini-1.5-flash` for fast iteration
+- Use `gemini-2.5-flash` for fast iteration
 - Monitor usage in Google AI Studio dashboard
 - Test with a few VINs before bulk processing
 
@@ -150,7 +150,7 @@ You've hit the free tier limits:
 ### Cost Optimization
 - Cache completed reports (already implemented)
 - Don't regenerate reports unnecessarily
-- Use `gemini-1.5-flash` instead of `pro` for most cases
+- Use `gemini-2.5-flash` instead of `pro` for most cases
 - Monitor token usage in logs
 
 ## Support

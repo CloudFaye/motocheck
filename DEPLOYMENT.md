@@ -27,7 +27,7 @@ Set these in **both services** on Railway:
 ### Optional
 - `ANTHROPIC_API_KEY` - Anthropic Claude API key (only required if LLM_PROVIDER=anthropic)
 - `NICB_API_KEY` - NICB VINCheck API key
-- `GEMINI_MODEL` - Gemini model to use (defaults to `gemini-1.5-flash`)
+- `GEMINI_MODEL` - Gemini model to use (defaults to `gemini-2.5-flash`)
 - `ANTHROPIC_MODEL` - Claude model to use (defaults to `claude-sonnet-4-20250514`)
 - `WORKER_CONCURRENCY` - Number of concurrent jobs per worker (defaults to 5)
 - `SCRAPER_CONCURRENCY` - Number of concurrent browser instances (defaults to 2)
