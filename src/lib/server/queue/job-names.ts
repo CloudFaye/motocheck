@@ -49,8 +49,6 @@ export type JobName = typeof Jobs[keyof typeof Jobs];
 export const REQUIRED_SOURCES = [
 	'nhtsa_decode',
 	'nhtsa_recalls',
-	'nmvtis',
-	'nicb',
 	'copart',
 	'iaai',
 ] as const;
@@ -61,6 +59,8 @@ export const REQUIRED_SOURCES = [
  * (Requirements 63.2, 63.4, 63.5)
  */
 export const OPTIONAL_SOURCES = [
+	'nmvtis',      // Optional: May not be configured or available
+	'nicb',        // Optional: Often blocked (403) by API
 	'autotrader',
 	'cargurus',
 ] as const;
