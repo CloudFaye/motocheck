@@ -7,7 +7,7 @@
 
 import type { Job } from 'pg-boss';
 import { db } from '../src/lib/server/db/index.js';
-import { orders, pipelineReports, normalizedData } from '../src/lib/server/db/schema.js';
+import { orders, pipelineReports, normalizedData, lookups } from '../src/lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { sendProgressUpdate, sendAdminNotification } from '../src/lib/server/email-service.js';
 import { Jobs, REQUIRED_SOURCES } from '../src/lib/server/queue/job-names.js';
@@ -24,19 +24,25 @@ interface NotificationJobData {
  * Send progress notification to user
  */
 async function sendUserProgressNotification(vin: string): Promise<void> {
-	// Get order info
-	const order = await db
-		.select()
+	// Get order info by joining lookups and orders tables
+	const result = await db
+		.select({
+			id: orders.id,
+			email: orders.email,
+			telegramChatId: orders.telegramChatId,
+			lookupId: orders.lookupId,
+		})
 		.from(orders)
-		.where(eq(orders.lookupId, vin))
+		.innerJoin(lookups, eq(orders.lookupId, lookups.id))
+		.where(eq(lookups.vin, vin))
 		.limit(1);
 	
-	if (!order || order.length === 0) {
+	if (!result || result.length === 0) {
 		console.log(`[notifications] No order found for VIN ${vin}`);
 		return;
 	}
 	
-	const orderData = order[0];
+	const orderData = result[0];
 	
 	// Count completed required sources
 	const completed = await db
