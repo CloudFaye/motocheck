@@ -45,19 +45,34 @@ interface IAAIData {
  * Uses puppeteer-extra with stealth plugin (Requirement 8.2)
  */
 async function scrapeIAAI(vin: string): Promise<{ data: IAAIData; html: string }> {
-	const browser = await puppeteer.launch({
-		headless: true,
-		args: [
-			'--no-sandbox',
-			'--disable-setuid-sandbox',
-			'--disable-dev-shm-usage',
-			'--disable-accelerated-2d-canvas',
-			'--disable-gpu',
-		],
-	});
+	let browser;
+	
+	try {
+		browser = await puppeteer.launch({
+			headless: true,
+			args: [
+				'--no-sandbox',
+				'--disable-setuid-sandbox',
+				'--disable-dev-shm-usage',
+				'--disable-accelerated-2d-canvas',
+				'--disable-gpu',
+				'--disable-blink-features=AutomationControlled',
+			],
+		});
+	} catch (error) {
+		console.error('[scrape-iaai] Failed to launch browser:', error);
+		throw new Error(`Failed to launch browser: ${error instanceof Error ? error.message : 'Unknown error'}`);
+	}
 
 	try {
 		const page = await browser.newPage();
+		
+		// Better stealth
+		await page.evaluateOnNewDocument(() => {
+			Object.defineProperty(navigator, 'webdriver', {
+				get: () => false,
+			});
+		});
 		
 		// Set realistic User-Agent
 		await page.setUserAgent(
@@ -71,13 +86,17 @@ async function scrapeIAAI(vin: string): Promise<{ data: IAAIData; html: string }
 		const searchUrl = `https://www.iaai.com/search?searchType=vin&query=${vin}`;
 		console.log(`[scrape-iaai] Navigating to: ${searchUrl}`);
 		
-		await page.goto(searchUrl, {
-			waitUntil: 'networkidle2',
-			timeout: 30000,
-		});
+		try {
+			await page.goto(searchUrl, {
+				waitUntil: 'domcontentloaded', // Changed from networkidle2
+				timeout: 45000, // Increased timeout
+			});
+		} catch (error) {
+			console.log(`[scrape-iaai] Navigation timeout, attempting to scrape partial content`);
+		}
 		
 		// Wait a bit for dynamic content to load
-		await new Promise(resolve => setTimeout(resolve, 2000));
+		await new Promise(resolve => setTimeout(resolve, 3000));
 		
 		// Get the complete HTML snapshot for re-parsing (Requirement 8.5)
 		const html = await page.content();
