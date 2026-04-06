@@ -76,7 +76,7 @@ async function scrapeCopart(vin: string): Promise<{ data: CopartData; html: stri
 		});
 		
 		// Wait a bit for dynamic content to load
-		await page.waitForTimeout(2000);
+		await new Promise(resolve => setTimeout(resolve, 2000));
 		
 		// Get the complete HTML snapshot for re-parsing (Requirement 7.5, 24.1)
 		const html = await page.content();

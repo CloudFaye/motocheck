@@ -77,7 +77,7 @@ async function scrapeIAAI(vin: string): Promise<{ data: IAAIData; html: string }
 		});
 		
 		// Wait a bit for dynamic content to load
-		await page.waitForTimeout(2000);
+		await new Promise(resolve => setTimeout(resolve, 2000));
 		
 		// Get the complete HTML snapshot for re-parsing (Requirement 8.5)
 		const html = await page.content();
