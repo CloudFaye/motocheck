@@ -77,6 +77,7 @@ export async function createAllQueues(): Promise<void> {
 		'stitch-report',
 		'llm-analyze',
 		'llm-write-sections',
+		'send-notification',
 	];
 	
 	console.log('[pg-boss] Creating queues...');
