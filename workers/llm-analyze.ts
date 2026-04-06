@@ -155,8 +155,17 @@ async function callLLMWithTimeout(
  */
 function parseLLMResponse(responseText: string): LLMAnalysisResult | null {
 	try {
+		// Strip markdown code blocks if present (handles ```json...``` format)
+		let cleanedText = responseText.trim();
+		
+		// Remove opening code block markers (```json or ```)
+		cleanedText = cleanedText.replace(/^```(?:json)?\s*\n?/i, '');
+		
+		// Remove closing code block marker (```)
+		cleanedText = cleanedText.replace(/\n?```\s*$/, '');
+		
 		// Try to parse as JSON (Requirement 46.1)
-		const parsed = JSON.parse(responseText);
+		const parsed = JSON.parse(cleanedText.trim());
 
 		// Validate structure (Requirement 46.2)
 		if (!validateAnalysisResult(parsed)) {
