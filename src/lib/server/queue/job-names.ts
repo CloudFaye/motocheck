@@ -31,6 +31,9 @@ export const Jobs = {
 	// LLM jobs - AI analysis and section writing (Requirements 63.1, 77.5, 77.6)
 	LLM_ANALYZE: 'llm-analyze',
 	LLM_WRITE_SECTIONS: 'llm-write-sections',
+	
+	// Notification job - User progress and admin alerts
+	SEND_NOTIFICATION: 'send-notification',
 } as const;
 
 /**

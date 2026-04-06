@@ -181,6 +181,13 @@ async function checkAndEnqueueStitching(vin: string): Promise<void> {
 	} else {
 		const missingRequired = REQUIRED_SOURCES.filter(source => !completedSources.has(source));
 		console.log(`[normalize] Waiting for required sources for VIN ${vin}: ${missingRequired.join(', ')}`);
+		
+		// Send progress notification to user
+		const queue = await getQueue();
+		await queue.send(Jobs.SEND_NOTIFICATION, {
+			vin,
+			type: 'progress'
+		});
 	}
 }
 
