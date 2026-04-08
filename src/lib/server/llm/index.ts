@@ -2,13 +2,15 @@
  * Unified LLM Service
  * 
  * Supports multiple LLM providers:
- * - Google Gemini (default, free tier available)
+ * - Alibaba Cloud Model Studio (default, free tier available)
+ * - Google Gemini (free tier available)
  * - Anthropic Claude (premium option)
  * - OpenAI (GPT-4o-mini, affordable and reliable)
  * - OpenRouter (access to many open-source models)
  * 
  * Provider selection via LLM_PROVIDER environment variable:
- * - "gemini" (default) - Uses Google Gemini API
+ * - "alibaba" (default) - Uses Alibaba Cloud Model Studio API (Qwen models)
+ * - "gemini" - Uses Google Gemini API
  * - "anthropic" - Uses Anthropic Claude API
  * - "openai" - Uses OpenAI API
  * - "openrouter" - Uses OpenRouter API (supports Llama, Mistral, etc.)
@@ -19,25 +21,33 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 
 // LLM Provider configuration
-const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
+const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'alibaba').toLowerCase();
+const ALIBABA_API_KEY = process.env.ALIBABA_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Model configuration
+const ALIBABA_MODEL = process.env.ALIBABA_MODEL || 'qwen-plus';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'google/gemma-4-26b-a4b-it:free';
 
 // Initialize clients
+let alibabaClient: OpenAI | null = null;
 let geminiClient: GoogleGenerativeAI | null = null;
 let anthropicClient: Anthropic | null = null;
 let openaiClient: OpenAI | null = null;
 let openrouterClient: OpenAI | null = null;
 
-if (LLM_PROVIDER === 'gemini' && GEMINI_API_KEY) {
+if (LLM_PROVIDER === 'alibaba' && ALIBABA_API_KEY) {
+	alibabaClient = new OpenAI({
+		apiKey: ALIBABA_API_KEY,
+		baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+	});
+} else if (LLM_PROVIDER === 'gemini' && GEMINI_API_KEY) {
 	geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY);
 } else if (LLM_PROVIDER === 'anthropic' && ANTHROPIC_API_KEY) {
 	anthropicClient = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
@@ -58,7 +68,7 @@ export interface LLMMessage {
 export interface LLMResponse {
 	content: string;
 	model: string;
-	provider: 'gemini' | 'anthropic' | 'openai' | 'openrouter';
+	provider: 'alibaba' | 'gemini' | 'anthropic' | 'openai' | 'openrouter';
 	tokensUsed?: number;
 }
 
@@ -76,6 +86,15 @@ export async function generateText(
 	const maxTokens = options?.maxTokens || 2000;
 	const temperature = options?.temperature || 0.7;
 	const timeout = options?.timeout || 60000;
+
+	// Use Alibaba Cloud Model Studio
+	if (LLM_PROVIDER === 'alibaba') {
+		if (!alibabaClient) {
+			throw new Error('Alibaba API key not configured. Set ALIBABA_API_KEY environment variable.');
+		}
+
+		return await generateWithAlibaba(messages, maxTokens, temperature, timeout);
+	}
 
 	// Use Gemini
 	if (LLM_PROVIDER === 'gemini') {
@@ -114,6 +133,54 @@ export async function generateText(
 	}
 
 	throw new Error(`Unsupported LLM provider: ${LLM_PROVIDER}`);
+}
+
+/**
+ * Generate text using Alibaba Cloud Model Studio (Qwen)
+ */
+async function generateWithAlibaba(
+	messages: LLMMessage[],
+	maxTokens: number,
+	temperature: number,
+	timeout: number
+): Promise<LLMResponse> {
+	if (!alibabaClient) {
+		throw new Error('Alibaba client not initialized');
+	}
+
+	// Convert messages to OpenAI-compatible format
+	const alibabaMessages = messages.map(m => ({
+		role: m.role as 'system' | 'user' | 'assistant',
+		content: m.content,
+	}));
+
+	// Create timeout promise
+	const timeoutPromise = new Promise<never>((_, reject) => {
+		setTimeout(() => reject(new Error('Alibaba API timeout')), timeout);
+	});
+
+	// Race between API call and timeout
+	const response = await Promise.race([
+		alibabaClient.chat.completions.create({
+			model: ALIBABA_MODEL,
+			messages: alibabaMessages,
+			max_tokens: maxTokens,
+			temperature: temperature,
+		}),
+		timeoutPromise,
+	]);
+
+	const content = response.choices[0]?.message?.content;
+	if (!content) {
+		throw new Error('No content in Alibaba response');
+	}
+
+	return {
+		content: content,
+		model: ALIBABA_MODEL,
+		provider: 'alibaba',
+		tokensUsed: response.usage?.total_tokens,
+	};
 }
 
 /**
@@ -358,6 +425,14 @@ export function getLLMInfo(): {
 	model: string;
 	configured: boolean;
 } {
+	if (LLM_PROVIDER === 'alibaba') {
+		return {
+			provider: 'alibaba',
+			model: ALIBABA_MODEL,
+			configured: !!ALIBABA_API_KEY,
+		};
+	}
+
 	if (LLM_PROVIDER === 'gemini') {
 		return {
 			provider: 'gemini',
