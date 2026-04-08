@@ -99,6 +99,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			queue.send(Jobs.SCRAPE_IAAI, { vin }),
 			queue.send(Jobs.SCRAPE_AUTOTRADER, { vin }),
 			queue.send(Jobs.SCRAPE_CARGURUS, { vin }),
+			queue.send(Jobs.SCRAPE_JDPOWER, { vin }),
 		];
 
 		try {

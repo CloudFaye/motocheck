@@ -72,6 +72,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const optionalJobs = [
 			{ name: Jobs.SCRAPE_AUTOTRADER, data: { vin } },
 			{ name: Jobs.SCRAPE_CARGURUS, data: { vin } },
+			{ name: Jobs.SCRAPE_JDPOWER, data: { vin } },
 		];
 
 		// Enqueue all jobs in parallel

@@ -21,6 +21,7 @@ export const Jobs = {
 	SCRAPE_IAAI: 'scrape-iaai',
 	SCRAPE_AUTOTRADER: 'scrape-autotrader',
 	SCRAPE_CARGURUS: 'scrape-cargurus',
+	SCRAPE_JDPOWER: 'scrape-jdpower',
 	
 	// Normalizer job - Transform raw data to unified schema (Requirements 63.1, 77.3)
 	NORMALIZE: 'normalize',
@@ -63,6 +64,7 @@ export const OPTIONAL_SOURCES = [
 	'nicb',        // Optional: Often blocked (403) by API
 	'autotrader',
 	'cargurus',
+	'jdpower',
 ] as const;
 
 /**
