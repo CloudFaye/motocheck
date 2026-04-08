@@ -73,6 +73,7 @@ export async function createAllQueues(): Promise<void> {
 		'scrape-iaai',
 		'scrape-autotrader',
 		'scrape-cargurus',
+		'scrape-jdpower',
 		'normalize',
 		'stitch-report',
 		'llm-analyze',

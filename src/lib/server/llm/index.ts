@@ -33,7 +33,7 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Model configuration
 const ALIBABA_MODEL = process.env.ALIBABA_MODEL || 'qwen-plus';
-const MULEROUTER_MODEL = process.env.MULEROUTER_MODEL || 'gpt-4o-mini';
+const MULEROUTER_MODEL = process.env.MULEROUTER_MODEL || 'qwen-plus';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
