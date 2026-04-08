@@ -55,7 +55,7 @@ if (LLM_PROVIDER === 'alibaba' && ALIBABA_API_KEY) {
 } else if (LLM_PROVIDER === 'mulerouter' && MULEROUTER_API_KEY) {
 	mulerouterClient = new OpenAI({
 		apiKey: MULEROUTER_API_KEY,
-		baseURL: 'https://api.mulerouter.ai/v1',
+		baseURL: 'https://api.mulerouter.ai/openai/v1',
 	});
 } else if (LLM_PROVIDER === 'gemini' && GEMINI_API_KEY) {
 	geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY);
