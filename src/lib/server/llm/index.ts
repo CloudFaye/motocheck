@@ -33,7 +33,7 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Model configuration
 const ALIBABA_MODEL = process.env.ALIBABA_MODEL || 'qwen-plus';
-const MULEROUTER_MODEL = process.env.MULEROUTER_MODEL || 'qwen-plus';
+const MULEROUTER_MODEL = process.env.MULEROUTER_MODEL || 'qwen-flash';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
@@ -55,7 +55,7 @@ if (LLM_PROVIDER === 'alibaba' && ALIBABA_API_KEY) {
 } else if (LLM_PROVIDER === 'mulerouter' && MULEROUTER_API_KEY) {
 	mulerouterClient = new OpenAI({
 		apiKey: MULEROUTER_API_KEY,
-		baseURL: 'https://api.mulerouter.ai/openai/v1',
+		baseURL: 'https://api.mulerouter.ai/vendors/openai/v1',
 	});
 } else if (LLM_PROVIDER === 'gemini' && GEMINI_API_KEY) {
 	geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY);
