@@ -1,35 +1,53 @@
 /**
  * Unified LLM Service
  * 
- * Supports multiple LLM providers with automatic fallback:
- * - Google Gemini (default, free tier)
+ * Supports multiple LLM providers:
+ * - Google Gemini (default, free tier available)
  * - Anthropic Claude (premium option)
+ * - OpenAI (GPT-4o-mini, affordable and reliable)
+ * - OpenRouter (access to many open-source models)
  * 
  * Provider selection via LLM_PROVIDER environment variable:
  * - "gemini" (default) - Uses Google Gemini API
  * - "anthropic" - Uses Anthropic Claude API
+ * - "openai" - Uses OpenAI API
+ * - "openrouter" - Uses OpenRouter API (supports Llama, Mistral, etc.)
  */
 
 import Anthropic from '@anthropic-ai/sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
 // LLM Provider configuration
 const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Model configuration
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.1-8b-instruct:free';
 
 // Initialize clients
 let geminiClient: GoogleGenerativeAI | null = null;
 let anthropicClient: Anthropic | null = null;
+let openaiClient: OpenAI | null = null;
+let openrouterClient: OpenAI | null = null;
 
 if (LLM_PROVIDER === 'gemini' && GEMINI_API_KEY) {
 	geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY);
 } else if (LLM_PROVIDER === 'anthropic' && ANTHROPIC_API_KEY) {
 	anthropicClient = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+} else if (LLM_PROVIDER === 'openai' && OPENAI_API_KEY) {
+	openaiClient = new OpenAI({ apiKey: OPENAI_API_KEY });
+} else if (LLM_PROVIDER === 'openrouter' && OPENROUTER_API_KEY) {
+	openrouterClient = new OpenAI({
+		apiKey: OPENROUTER_API_KEY,
+		baseURL: 'https://openrouter.ai/api/v1',
+	});
 }
 
 export interface LLMMessage {
@@ -40,7 +58,7 @@ export interface LLMMessage {
 export interface LLMResponse {
 	content: string;
 	model: string;
-	provider: 'gemini' | 'anthropic';
+	provider: 'gemini' | 'anthropic' | 'openai' | 'openrouter';
 	tokensUsed?: number;
 }
 
@@ -75,6 +93,24 @@ export async function generateText(
 		}
 
 		return await generateWithAnthropic(messages, maxTokens, temperature, timeout);
+	}
+
+	// Use OpenAI
+	if (LLM_PROVIDER === 'openai') {
+		if (!openaiClient) {
+			throw new Error('OpenAI API key not configured. Set OPENAI_API_KEY environment variable.');
+		}
+
+		return await generateWithOpenAI(messages, maxTokens, temperature, timeout);
+	}
+
+	// Use OpenRouter
+	if (LLM_PROVIDER === 'openrouter') {
+		if (!openrouterClient) {
+			throw new Error('OpenRouter API key not configured. Set OPENROUTER_API_KEY environment variable.');
+		}
+
+		return await generateWithOpenRouter(messages, maxTokens, temperature, timeout);
 	}
 
 	throw new Error(`Unsupported LLM provider: ${LLM_PROVIDER}`);
@@ -219,6 +255,102 @@ async function generateWithAnthropic(
 }
 
 /**
+ * Generate text using OpenAI
+ */
+async function generateWithOpenAI(
+	messages: LLMMessage[],
+	maxTokens: number,
+	temperature: number,
+	timeout: number
+): Promise<LLMResponse> {
+	if (!openaiClient) {
+		throw new Error('OpenAI client not initialized');
+	}
+
+	// Convert messages to OpenAI format
+	const openaiMessages = messages.map(m => ({
+		role: m.role as 'system' | 'user' | 'assistant',
+		content: m.content,
+	}));
+
+	// Create timeout promise
+	const timeoutPromise = new Promise<never>((_, reject) => {
+		setTimeout(() => reject(new Error('OpenAI API timeout')), timeout);
+	});
+
+	// Race between API call and timeout
+	const response = await Promise.race([
+		openaiClient.chat.completions.create({
+			model: OPENAI_MODEL,
+			messages: openaiMessages,
+			max_tokens: maxTokens,
+			temperature: temperature,
+		}),
+		timeoutPromise,
+	]);
+
+	const content = response.choices[0]?.message?.content;
+	if (!content) {
+		throw new Error('No content in OpenAI response');
+	}
+
+	return {
+		content: content,
+		model: OPENAI_MODEL,
+		provider: 'openai',
+		tokensUsed: response.usage?.total_tokens,
+	};
+}
+
+/**
+ * Generate text using OpenRouter
+ */
+async function generateWithOpenRouter(
+	messages: LLMMessage[],
+	maxTokens: number,
+	temperature: number,
+	timeout: number
+): Promise<LLMResponse> {
+	if (!openrouterClient) {
+		throw new Error('OpenRouter client not initialized');
+	}
+
+	// Convert messages to OpenRouter format (same as OpenAI)
+	const openrouterMessages = messages.map(m => ({
+		role: m.role as 'system' | 'user' | 'assistant',
+		content: m.content,
+	}));
+
+	// Create timeout promise
+	const timeoutPromise = new Promise<never>((_, reject) => {
+		setTimeout(() => reject(new Error('OpenRouter API timeout')), timeout);
+	});
+
+	// Race between API call and timeout
+	const response = await Promise.race([
+		openrouterClient.chat.completions.create({
+			model: OPENROUTER_MODEL,
+			messages: openrouterMessages,
+			max_tokens: maxTokens,
+			temperature: temperature,
+		}),
+		timeoutPromise,
+	]);
+
+	const content = response.choices[0]?.message?.content;
+	if (!content) {
+		throw new Error('No content in OpenRouter response');
+	}
+
+	return {
+		content: content,
+		model: OPENROUTER_MODEL,
+		provider: 'openrouter',
+		tokensUsed: response.usage?.total_tokens,
+	};
+}
+
+/**
  * Get current LLM provider information
  */
 export function getLLMInfo(): {
@@ -239,6 +371,22 @@ export function getLLMInfo(): {
 			provider: 'anthropic',
 			model: ANTHROPIC_MODEL,
 			configured: !!ANTHROPIC_API_KEY,
+		};
+	}
+
+	if (LLM_PROVIDER === 'openai') {
+		return {
+			provider: 'openai',
+			model: OPENAI_MODEL,
+			configured: !!OPENAI_API_KEY,
+		};
+	}
+
+	if (LLM_PROVIDER === 'openrouter') {
+		return {
+			provider: 'openrouter',
+			model: OPENROUTER_MODEL,
+			configured: !!OPENROUTER_API_KEY,
 		};
 	}
 

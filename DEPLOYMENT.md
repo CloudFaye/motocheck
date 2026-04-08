@@ -18,16 +18,20 @@ Set these in **both services** on Railway:
 
 ### Required
 - `DATABASE_URL` - PostgreSQL connection string (use Railway's `${{ Postgres.DATABASE_URL }}` reference)
-- `LLM_PROVIDER` - LLM provider to use: `gemini` (default, free) or `anthropic` (premium)
+- `LLM_PROVIDER` - LLM provider to use: `gemini`, `openai`, `openrouter`, or `anthropic`
 - `GEMINI_API_KEY` - Google Gemini API key (required if LLM_PROVIDER=gemini)
+- `OPENAI_API_KEY` - OpenAI API key (required if LLM_PROVIDER=openai)
+- `OPENROUTER_API_KEY` - OpenRouter API key (required if LLM_PROVIDER=openrouter)
+- `ANTHROPIC_API_KEY` - Anthropic API key (required if LLM_PROVIDER=anthropic)
 - `NMVTIS_API_URL` - NMVTIS provider API endpoint
 - `NMVTIS_API_KEY` - NMVTIS provider API key
 - `NODE_ENV` - Set to `production`
 
 ### Optional
-- `ANTHROPIC_API_KEY` - Anthropic Claude API key (only required if LLM_PROVIDER=anthropic)
 - `NICB_API_KEY` - NICB VINCheck API key
 - `GEMINI_MODEL` - Gemini model to use (defaults to `gemini-2.5-flash`)
+- `OPENAI_MODEL` - OpenAI model to use (defaults to `gpt-4o-mini`)
+- `OPENROUTER_MODEL` - OpenRouter model to use (defaults to `meta-llama/llama-3.1-8b-instruct:free`)
 - `ANTHROPIC_MODEL` - Claude model to use (defaults to `claude-sonnet-4-20250514`)
 - `WORKER_CONCURRENCY` - Number of concurrent jobs per worker (defaults to 5)
 - `SCRAPER_CONCURRENCY` - Number of concurrent browser instances (defaults to 2)

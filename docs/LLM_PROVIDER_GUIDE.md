@@ -4,19 +4,49 @@ The vehicle history platform supports multiple LLM providers with easy switching
 
 ## Supported Providers
 
-### 1. Google Gemini (Default)
-- **Status**: Free tier available
+### 1. Google Gemini
+- **Status**: Free tier available (20 requests/day per model)
 - **Best for**: Testing, development, small-scale production
 - **Setup**: See [GEMINI_SETUP.md](./GEMINI_SETUP.md)
 
-### 2. Anthropic Claude
+### 2. OpenAI
+- **Status**: Pay-as-you-go (gpt-4o-mini is very affordable)
+- **Best for**: Production with consistent quality and reliability
+- **Setup**: Get API key from https://platform.openai.com/api-keys
+
+### 3. OpenRouter
+- **Status**: Free models available, paid models from $0.06/1M tokens
+- **Best for**: Access to open-source models (Llama, Mistral, etc.)
+- **Setup**: Get API key from https://openrouter.ai/keys
+
+### 4. Anthropic Claude
 - **Status**: Paid only
-- **Best for**: High-volume production, enterprise use
+- **Best for**: High-quality analysis, complex reasoning
 - **Setup**: Get API key from https://console.anthropic.com/
+
+For detailed comparison and recommendations, see [LLM_PROVIDERS.md](./LLM_PROVIDERS.md)
 
 ## Quick Start
 
-### Using Gemini (Free)
+### Using OpenAI (Recommended for Production)
+
+```bash
+# Railway Environment Variables
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-your_openai_api_key
+OPENAI_MODEL=gpt-4o-mini  # optional, this is the default
+```
+
+### Using OpenRouter (Free Models Available)
+
+```bash
+# Railway Environment Variables
+LLM_PROVIDER=openrouter
+OPENROUTER_API_KEY=sk-or-your_openrouter_key
+OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free  # optional, this is the default
+```
+
+### Using Gemini (Free Tier)
 
 ```bash
 # Railway Environment Variables
@@ -25,7 +55,7 @@ GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash  # optional, this is the default
 ```
 
-### Using Anthropic (Paid)
+### Using Anthropic (Premium)
 
 ```bash
 # Railway Environment Variables
@@ -36,45 +66,78 @@ ANTHROPIC_MODEL=claude-sonnet-4-20250514  # optional, this is the default
 
 ## Switching Providers
 
-To switch from Gemini to Anthropic (or vice versa):
+To switch between providers:
 
 1. Update `LLM_PROVIDER` environment variable in Railway
 2. Ensure the corresponding API key is set
 3. Railway will automatically redeploy
 4. Verify in logs that the new provider is being used
 
+Example: Switching from Gemini to OpenAI:
+```bash
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-your_key
+```
+
 ## How It Works
 
 The platform uses a unified LLM service (`src/lib/server/llm/index.ts`) that:
 
 1. Reads `LLM_PROVIDER` environment variable
-2. Initializes the appropriate client (Gemini or Anthropic)
+2. Initializes the appropriate client (Gemini, OpenAI, OpenRouter, or Anthropic)
 3. Provides a consistent interface for both workers:
    - `llm-analyze.ts` - Analyzes vehicle timeline
    - `llm-write-sections.ts` - Writes 9 report sections
 
+All providers use the same interface, making switching seamless with no code changes required.
+
 ## Provider Comparison
 
-| Feature | Gemini Free | Gemini Paid | Anthropic |
-|---------|-------------|-------------|-----------|
-| **Cost** | Free | $0.075-0.30/1M tokens | $3-15/1M tokens |
-| **Daily Limit** | 1,500 requests | Unlimited | Unlimited |
-| **Rate Limit** | 15 RPM | Higher | 50 RPM |
-| **Quality** | Excellent | Excellent | Excellent |
-| **JSON Support** | ✅ Native | ✅ Native | ✅ Native |
-| **Timeout Handling** | ✅ 60s | ✅ 60s | ✅ 60s |
-| **Retry Logic** | ✅ Auto | ✅ Auto | ✅ Auto |
+| Feature | Gemini Free | OpenAI | OpenRouter Free | Anthropic |
+|---------|-------------|--------|-----------------|-----------|
+| **Cost** | Free | $0.15-0.60/1M tokens | Free | $3-15/1M tokens |
+| **Daily Limit** | 20 requests | Unlimited | Unlimited | Unlimited |
+| **Rate Limit** | 15 RPM | 500 RPM | Varies | 50 RPM |
+| **Quality** | Excellent | Excellent | Good-Excellent | Excellent |
+| **JSON Support** | ✅ Native | ✅ Native | ✅ Native | ✅ Native |
+| **Timeout Handling** | ✅ 60s | ✅ 60s | ✅ 60s | ✅ 60s |
+| **Retry Logic** | ✅ Auto | ✅ Auto | ✅ Auto | ✅ Auto |
+| **Best For** | Testing | Production | Development | Premium |
 
 ## Model Options
 
 ### Gemini Models
 
 ```bash
-# Fast, recommended for production (default)
+# Fast, recommended (default)
 GEMINI_MODEL=gemini-2.5-flash
 
-# Higher quality, slower
-GEMINI_MODEL=gemini-1.5-pro
+# Higher quality
+GEMINI_MODEL=gemini-2.5-pro
+```
+
+### OpenAI Models
+
+```bash
+# Affordable, fast (default)
+OPENAI_MODEL=gpt-4o-mini
+
+# Higher quality
+OPENAI_MODEL=gpt-4o
+OPENAI_MODEL=gpt-4-turbo
+```
+
+### OpenRouter Models
+
+```bash
+# Free Llama model (default)
+OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
+
+# Free Mistral model
+OPENROUTER_MODEL=mistralai/mistral-7b-instruct:free
+
+# Paid higher quality
+OPENROUTER_MODEL=meta-llama/llama-3.1-70b-instruct
 ```
 
 ### Anthropic Models
