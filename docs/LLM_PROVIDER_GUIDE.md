@@ -130,11 +130,14 @@ OPENAI_MODEL=gpt-4-turbo
 ### OpenRouter Models
 
 ```bash
-# Free Llama model (default)
-OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
+# Free Gemma model (default, recommended)
+OPENROUTER_MODEL=google/gemma-4-26b-a4b-it:free
 
-# Free Mistral model
-OPENROUTER_MODEL=mistralai/mistral-7b-instruct:free
+# Free Gemma 31B model
+OPENROUTER_MODEL=google/gemma-4-31b-it:free
+
+# Free DeepSeek reasoning model
+OPENROUTER_MODEL=deepseek/deepseek-r1:free
 
 # Paid higher quality
 OPENROUTER_MODEL=meta-llama/llama-3.1-70b-instruct

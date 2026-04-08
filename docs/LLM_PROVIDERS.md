@@ -10,14 +10,14 @@ OpenRouter provides access to several free models without requiring billing setu
 ```bash
 LLM_PROVIDER=openrouter
 OPENROUTER_API_KEY=your_free_api_key  # Get from https://openrouter.ai/keys
-OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
+OPENROUTER_MODEL=google/gemma-4-26b-a4b-it:free
 ```
 
 **Available Free Models:**
-- `meta-llama/llama-3.1-8b-instruct:free` - Good quality, reliable (recommended)
-- `mistralai/mistral-7b-instruct:free` - Fast, decent quality
-- `google/gemini-2.0-flash-exp:free` - Gemini via OpenRouter (no quota limits!)
-- `qwen/qwen-2-7b-instruct:free` - Alternative option
+- `google/gemma-4-26b-a4b-it:free` - Google's Gemma 4, 26B MoE model (recommended)
+- `google/gemma-4-31b-it:free` - Google's Gemma 4, 31B dense model
+- `deepseek/deepseek-r1:free` - DeepSeek R1 reasoning model
+- Check https://openrouter.ai/models for current free models
 
 **Advantages:**
 - ✅ No billing setup required
@@ -73,10 +73,10 @@ OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
 ```
 
 **Popular Free OpenRouter Models:**
-- `meta-llama/llama-3.1-8b-instruct:free` - Best free option, good quality
-- `google/gemini-2.0-flash-exp:free` - Gemini without quota limits
-- `mistralai/mistral-7b-instruct:free` - Fast alternative
-- `qwen/qwen-2-7b-instruct:free` - Another solid option
+- `google/gemma-4-26b-a4b-it:free` - Best free option, Google's latest
+- `google/gemma-4-31b-it:free` - Larger Gemma model
+- `deepseek/deepseek-r1:free` - Reasoning-focused model
+- Check https://openrouter.ai/models?free=true for latest free models
 
 ✅ **Recommended for production without billing setup**
 
@@ -99,7 +99,7 @@ ANTHROPIC_MODEL=claude-sonnet-4-20250514
 ```bash
 LLM_PROVIDER=openrouter
 OPENROUTER_API_KEY=your_key  # No credit card required!
-OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
+OPENROUTER_MODEL=google/gemma-4-26b-a4b-it:free
 ```
 - ✅ No billing setup needed
 - ✅ No quota limits
@@ -154,9 +154,9 @@ OPENAI_MODEL=gpt-4o-mini
 
 | Provider | Model | Input | Output | Total (avg) | Billing Required |
 |----------|-------|-------|--------|-------------|------------------|
-| OpenRouter | llama-3.1-8b:free | Free | Free | Free | ❌ No |
-| OpenRouter | gemini-2.0-flash:free | Free | Free | Free | ❌ No |
-| OpenRouter | mistral-7b:free | Free | Free | Free | ❌ No |
+| OpenRouter | gemma-4-26b:free | Free | Free | Free | ❌ No |
+| OpenRouter | gemma-4-31b:free | Free | Free | Free | ❌ No |
+| OpenRouter | deepseek-r1:free | Free | Free | Free | ❌ No |
 | Gemini | gemini-2.5-flash | Free* | Free* | Free* | ❌ No |
 | OpenAI | gpt-4o-mini | $0.15 | $0.60 | ~$0.40 | ✅ Yes |
 | OpenRouter | llama-3.1-70b | $0.35 | $0.40 | ~$0.38 | ✅ Yes |
@@ -164,7 +164,7 @@ OPENAI_MODEL=gpt-4o-mini
 
 *Gemini free tier has strict daily limits (20 requests/day for gemini-2.5-flash)
 
-**Best Free Option**: OpenRouter with `meta-llama/llama-3.1-8b-instruct:free` - No limits, no billing!
+**Best Free Option**: OpenRouter with `google/gemma-4-26b-a4b-it:free` - No limits, no billing!
 
 ## Switching Providers
 
