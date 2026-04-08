@@ -209,25 +209,66 @@ Format as a numbered list. Be specific and actionable. Return ONLY the checklist
 ];
 
 /**
- * Call LLM API to generate a section
+ * Call LLM API to generate ALL sections at once (single request)
  */
-async function generateSection(
-	sectionKey: string,
-	prompt: string,
-	timeoutMs: number = 60000
-): Promise<{ content: string; model: string; provider: string }> {
-	// Call unified LLM service (Requirement 82.5)
+async function generateAllSections(
+	timeline: Timeline,
+	llmFlags: Record<string, unknown>,
+	timeoutMs: number = 120000
+): Promise<Record<string, string>> {
+	const combinedPrompt = `You are writing a complete vehicle history report. Generate ALL 9 sections in a single JSON response.
+
+VEHICLE DATA:
+${JSON.stringify({ 
+	identity: timeline.identity, 
+	riskScore: llmFlags?.riskScore, 
+	verdict: llmFlags?.verdict,
+	titleBrands: timeline.titleBrands,
+	damageRecords: timeline.damageRecords,
+	recalls: timeline.recalls,
+	gaps: timeline.gaps,
+	odometerReadings: timeline.odometerReadings,
+	titleHistory: timeline.titleHistory,
+	marketValue: timeline.marketValue,
+	odometerAssessment: llmFlags?.odometerAssessment,
+	titleAssessment: llmFlags?.titleAssessment,
+	gapAnalysis: llmFlags?.gapAnalysis
+}, null, 2)}
+
+Generate a JSON object with these 9 sections (keep each section concise, 2-3 paragraphs max):
+
+{
+  "summary": "3-sentence overview with verdict",
+  "ownership_history": "Ownership patterns analysis",
+  "accident_analysis": "Damage severity and implications",
+  "odometer_analysis": "Mileage assessment",
+  "title_history": "Title brands explained",
+  "recall_status": "Open/closed recalls",
+  "market_value": "Price fairness assessment",
+  "gap_analysis": "History gaps explained",
+  "buyers_checklist": "8 specific inspection items as numbered list"
+}
+
+Return ONLY valid JSON, no markdown formatting.`;
+
 	const response = await generateText(
-		[{ role: 'user', content: prompt }],
+		[{ role: 'user', content: combinedPrompt }],
 		{
-			maxTokens: 1000, // Requirement 16.5
+			maxTokens: 4000, // Increased for all sections
 			temperature: 0.7,
 			timeout: timeoutMs,
 		}
 	);
 
+	// Parse JSON response
+	let cleanedText = response.content.trim();
+	cleanedText = cleanedText.replace(/^```(?:json)?\s*\n?/i, '');
+	cleanedText = cleanedText.replace(/\n?```\s*$/, '');
+	
+	const sections = JSON.parse(cleanedText.trim());
+	
 	return {
-		content: response.content,
+		content: sections,
 		model: response.model,
 		provider: response.provider,
 	};
@@ -282,44 +323,44 @@ async function writeSections(job: { data: { vin: string } }): Promise<void> {
 		const timeline = report.timeline as Timeline;
 		const llmFlags = (report.llmFlags as Record<string, unknown>) || {};
 
+		// Generate ALL sections in a single LLM call (reduces from 9 calls to 1)
+		console.log(`[llm-write-sections] Generating all sections in single request`);
+		
+		const llmInfo = getLLMInfo();
+		const response = await generateAllSections(timeline, llmFlags);
+		
+		const sections = response.content as Record<string, string>;
 		const sectionsGenerated: string[] = [];
 		const sectionsFailed: string[] = [];
 
-		// Generate each section (Requirement 16.1)
+		// Store each section in database
 		for (const sectionDef of SECTION_PROMPTS) {
 			try {
-				console.log(`[llm-write-sections] Generating section: ${sectionDef.key}`);
+				const content = sections[sectionDef.key];
+				
+				if (!content || typeof content !== 'string') {
+					throw new Error(`Missing or invalid content for section: ${sectionDef.key}`);
+				}
 
-				// Build prompt
-				const prompt = sectionDef.prompt(timeline, llmFlags);
-
-				// Get LLM info for logging
-				const llmInfo = getLLMInfo();
-
-				// Call LLM API
-				const response = await generateSection(sectionDef.key, prompt);
-
-				// Store section in database (Requirement 16.11)
 				await db.insert(reportSections).values({
 					vin,
 					sectionKey: sectionDef.key,
-					content: response.content,
+					content: content,
 					modelUsed: response.model,
 				}).onConflictDoUpdate({
 					target: [reportSections.vin, reportSections.sectionKey],
 					set: {
-						content: response.content,
+						content: content,
 						modelUsed: response.model,
 						generatedAt: new Date(),
 					},
 				});
 
 				sectionsGenerated.push(sectionDef.key);
-				console.log(`[llm-write-sections] Section generated: ${sectionDef.key} using ${response.provider} (${response.model})`);
+				console.log(`[llm-write-sections] Section stored: ${sectionDef.key}`);
 			} catch (error) {
-				// Continue generating other sections if one fails (Requirement 16.9, 46.4)
 				const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-				console.error(`[llm-write-sections] Failed to generate section ${sectionDef.key}:`, errorMessage);
+				console.error(`[llm-write-sections] Failed to store section ${sectionDef.key}:`, errorMessage);
 				sectionsFailed.push(sectionDef.key);
 			}
 		}
