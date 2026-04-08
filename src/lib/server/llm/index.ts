@@ -3,6 +3,7 @@
  * 
  * Supports multiple LLM providers:
  * - Alibaba Cloud Model Studio (default, free tier available)
+ * - MuleRouter (free credits available)
  * - Google Gemini (free tier available)
  * - Anthropic Claude (premium option)
  * - OpenAI (GPT-4o-mini, affordable and reliable)
@@ -10,6 +11,7 @@
  * 
  * Provider selection via LLM_PROVIDER environment variable:
  * - "alibaba" (default) - Uses Alibaba Cloud Model Studio API (Qwen models)
+ * - "mulerouter" - Uses MuleRouter API (various models)
  * - "gemini" - Uses Google Gemini API
  * - "anthropic" - Uses Anthropic Claude API
  * - "openai" - Uses OpenAI API
@@ -23,6 +25,7 @@ import OpenAI from 'openai';
 // LLM Provider configuration
 const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'alibaba').toLowerCase();
 const ALIBABA_API_KEY = process.env.ALIBABA_API_KEY;
+const MULEROUTER_API_KEY = process.env.MULEROUTER_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -30,6 +33,7 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Model configuration
 const ALIBABA_MODEL = process.env.ALIBABA_MODEL || 'qwen-plus';
+const MULEROUTER_MODEL = process.env.MULEROUTER_MODEL || 'gpt-4o-mini';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
@@ -37,6 +41,7 @@ const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'google/gemma-4-26b-a4b
 
 // Initialize clients
 let alibabaClient: OpenAI | null = null;
+let mulerouterClient: OpenAI | null = null;
 let geminiClient: GoogleGenerativeAI | null = null;
 let anthropicClient: Anthropic | null = null;
 let openaiClient: OpenAI | null = null;
@@ -46,6 +51,11 @@ if (LLM_PROVIDER === 'alibaba' && ALIBABA_API_KEY) {
 	alibabaClient = new OpenAI({
 		apiKey: ALIBABA_API_KEY,
 		baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+	});
+} else if (LLM_PROVIDER === 'mulerouter' && MULEROUTER_API_KEY) {
+	mulerouterClient = new OpenAI({
+		apiKey: MULEROUTER_API_KEY,
+		baseURL: 'https://mulerouter.ai/api/v1',
 	});
 } else if (LLM_PROVIDER === 'gemini' && GEMINI_API_KEY) {
 	geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -68,7 +78,7 @@ export interface LLMMessage {
 export interface LLMResponse {
 	content: string;
 	model: string;
-	provider: 'alibaba' | 'gemini' | 'anthropic' | 'openai' | 'openrouter';
+	provider: 'alibaba' | 'mulerouter' | 'gemini' | 'anthropic' | 'openai' | 'openrouter';
 	tokensUsed?: number;
 }
 
@@ -94,6 +104,15 @@ export async function generateText(
 		}
 
 		return await generateWithAlibaba(messages, maxTokens, temperature, timeout);
+	}
+
+	// Use MuleRouter
+	if (LLM_PROVIDER === 'mulerouter') {
+		if (!mulerouterClient) {
+			throw new Error('MuleRouter API key not configured. Set MULEROUTER_API_KEY environment variable.');
+		}
+
+		return await generateWithMuleRouter(messages, maxTokens, temperature, timeout);
 	}
 
 	// Use Gemini
@@ -179,6 +198,54 @@ async function generateWithAlibaba(
 		content: content,
 		model: ALIBABA_MODEL,
 		provider: 'alibaba',
+		tokensUsed: response.usage?.total_tokens,
+	};
+}
+
+/**
+ * Generate text using MuleRouter
+ */
+async function generateWithMuleRouter(
+	messages: LLMMessage[],
+	maxTokens: number,
+	temperature: number,
+	timeout: number
+): Promise<LLMResponse> {
+	if (!mulerouterClient) {
+		throw new Error('MuleRouter client not initialized');
+	}
+
+	// Convert messages to OpenAI-compatible format
+	const mulerouterMessages = messages.map(m => ({
+		role: m.role as 'system' | 'user' | 'assistant',
+		content: m.content,
+	}));
+
+	// Create timeout promise
+	const timeoutPromise = new Promise<never>((_, reject) => {
+		setTimeout(() => reject(new Error('MuleRouter API timeout')), timeout);
+	});
+
+	// Race between API call and timeout
+	const response = await Promise.race([
+		mulerouterClient.chat.completions.create({
+			model: MULEROUTER_MODEL,
+			messages: mulerouterMessages,
+			max_tokens: maxTokens,
+			temperature: temperature,
+		}),
+		timeoutPromise,
+	]);
+
+	const content = response.choices[0]?.message?.content;
+	if (!content) {
+		throw new Error('No content in MuleRouter response');
+	}
+
+	return {
+		content: content,
+		model: MULEROUTER_MODEL,
+		provider: 'mulerouter',
 		tokensUsed: response.usage?.total_tokens,
 	};
 }
@@ -430,6 +497,14 @@ export function getLLMInfo(): {
 			provider: 'alibaba',
 			model: ALIBABA_MODEL,
 			configured: !!ALIBABA_API_KEY,
+		};
+	}
+
+	if (LLM_PROVIDER === 'mulerouter') {
+		return {
+			provider: 'mulerouter',
+			model: MULEROUTER_MODEL,
+			configured: !!MULEROUTER_API_KEY,
 		};
 	}
 
