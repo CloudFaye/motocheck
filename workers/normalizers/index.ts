@@ -23,6 +23,7 @@ import { normalizeCopart } from './normalize-copart';
 import { normalizeIaai } from './normalize-iaai';
 import { normalizeAutotrader } from './normalize-autotrader';
 import { normalizeCargurus } from './normalize-cargurus';
+import { normalizeVininspect } from './normalize-vininspect';
 
 /**
  * Normalizer function type
@@ -41,6 +42,7 @@ const normalizers: Record<string, NormalizerFunction> = {
 	'iaai': normalizeIaai,
 	'autotrader': normalizeAutotrader,
 	'cargurus': normalizeCargurus,
+	'vininspect': normalizeVininspect,
 };
 
 /**

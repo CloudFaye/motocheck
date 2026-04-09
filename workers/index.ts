@@ -24,6 +24,7 @@ import { registerScrapeIAAIWorker } from './scrapers/scrape-iaai.js';
 import { registerScrapeAutoTraderWorker } from './scrapers/scrape-autotrader.js';
 import { registerScrapeCarGurusWorker } from './scrapers/scrape-cargurus.js';
 import { registerScrapeJDPowerWorker } from './scrapers/scrape-jdpower.js';
+import { registerScrapeVINInspectWorker } from './scrapers/scrape-vininspect.js';
 
 // Import normalizer worker (Requirement 25.3)
 import { registerNormalizerWorker } from './normalizers/index.js';
@@ -73,14 +74,15 @@ async function registerAllWorkers(): Promise<void> {
 		await registerFetchNICBWorker(queue);
 		console.log('[workers] ✓ Registered 4 fetcher workers');
 		
-		// Register scraper workers (5 workers)
+		// Register scraper workers (6 workers)
 		console.log('[workers] Registering scraper workers...');
 		await registerScrapeCopartWorker(queue);
 		await registerScrapeIAAIWorker(queue);
 		await registerScrapeAutoTraderWorker(queue);
 		await registerScrapeCarGurusWorker(queue);
 		await registerScrapeJDPowerWorker(queue);
-		console.log('[workers] ✓ Registered 5 scraper workers');
+		await registerScrapeVINInspectWorker(queue);
+		console.log('[workers] ✓ Registered 6 scraper workers');
 		
 		// Register normalizer worker (1 worker)
 		console.log('[workers] Registering normalizer worker...');
@@ -104,7 +106,7 @@ async function registerAllWorkers(): Promise<void> {
 		console.log('[workers] ✓ Registered notification worker');
 		
 		// Log total number of registered workers (Requirement 25.7, 86.4)
-		const totalWorkers = 15;
+		const totalWorkers = 16;
 		console.log(`[workers] ✓ Successfully registered ${totalWorkers} workers`);
 		console.log('[workers] Worker process is ready to process jobs');
 		

@@ -22,6 +22,7 @@ export const Jobs = {
 	SCRAPE_AUTOTRADER: 'scrape-autotrader',
 	SCRAPE_CARGURUS: 'scrape-cargurus',
 	SCRAPE_JDPOWER: 'scrape-jdpower',
+	SCRAPE_VININSPECT: 'scrape-vininspect',
 	
 	// Normalizer job - Transform raw data to unified schema (Requirements 63.1, 77.3)
 	NORMALIZE: 'normalize',
@@ -65,6 +66,7 @@ export const OPTIONAL_SOURCES = [
 	'autotrader',
 	'cargurus',
 	'jdpower',
+	'vininspect',
 ] as const;
 
 /**

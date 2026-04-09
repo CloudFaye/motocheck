@@ -100,11 +100,12 @@ export const POST: RequestHandler = async ({ request }) => {
 			queue.send(Jobs.SCRAPE_AUTOTRADER, { vin }),
 			queue.send(Jobs.SCRAPE_CARGURUS, { vin }),
 			queue.send(Jobs.SCRAPE_JDPOWER, { vin }),
+			queue.send(Jobs.SCRAPE_VININSPECT, { vin }),
 		];
 
 		try {
 			await Promise.all([...fetcherJobs, ...scraperJobs]);
-			console.log('✅ Successfully enqueued 8 jobs for VIN:', vin);
+			console.log('✅ Successfully enqueued 10 jobs for VIN:', vin);
 		} catch (error) {
 			console.error('❌ Failed to enqueue jobs:', error);
 			// Log individual failures
@@ -120,6 +121,8 @@ export const POST: RequestHandler = async ({ request }) => {
 						'scrape-iaai',
 						'scrape-autotrader',
 						'scrape-cargurus',
+						'scrape-jdpower',
+						'scrape-vininspect',
 					];
 					console.error(`✗ Failed to enqueue ${jobNames[index]}:`, result.reason);
 				}

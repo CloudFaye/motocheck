@@ -29,7 +29,8 @@ export const dataSourceEnum = pgEnum('data_source', [
 	'iaai',
 	'autotrader',
 	'cargurus',
-	'jdpower'
+	'jdpower',
+	'vininspect'
 ]);
 
 /**

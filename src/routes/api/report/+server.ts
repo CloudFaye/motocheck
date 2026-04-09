@@ -73,6 +73,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			{ name: Jobs.SCRAPE_AUTOTRADER, data: { vin } },
 			{ name: Jobs.SCRAPE_CARGURUS, data: { vin } },
 			{ name: Jobs.SCRAPE_JDPOWER, data: { vin } },
+			{ name: Jobs.SCRAPE_VININSPECT, data: { vin } },
 		];
 
 		// Enqueue all jobs in parallel
