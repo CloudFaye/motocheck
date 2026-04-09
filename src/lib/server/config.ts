@@ -1,73 +1,60 @@
 /**
- * Environment configuration loader and validator
- * Validates all required environment variables at application startup
- * Exits with descriptive error if any required variable is missing
+ * Environment configuration accessor.
+ *
+ * The previous implementation terminated the whole process at import time if any
+ * unrelated environment variable was missing. That made the worker bootstrap
+ * brittle because report workers pulled in payment/email/telegram config
+ * transitively. We keep the same `config.FOO` call sites, but make validation
+ * lazy so each feature only requires the env vars it actually uses.
  */
 
-interface Config {
-	DATABASE_URL: string;
-	NHTSA_API_URL: string;
-	PAYSTACK_SECRET_KEY: string;
-	RESEND_API_KEY: string;
-	FROM_EMAIL: string;
-	R2_ENDPOINT: string;
-	R2_ACCESS_KEY_ID: string;
-	R2_SECRET_ACCESS_KEY: string;
-	R2_BUCKET_NAME: string;
-	TELEGRAM_BOT_TOKEN: string;
-	TELEGRAM_SECRET_TOKEN: string;
-	PUBLIC_BASE_URL: string;
+export interface Config {
+	readonly DATABASE_URL: string;
+	readonly NHTSA_API_URL: string;
+	readonly PAYSTACK_SECRET_KEY: string;
+	readonly RESEND_API_KEY: string;
+	readonly FROM_EMAIL: string;
+	readonly TELEGRAM_BOT_TOKEN: string;
+	readonly TELEGRAM_SECRET_TOKEN: string;
+	readonly PUBLIC_BASE_URL: string;
 }
 
-const requiredEnvVars: (keyof Config)[] = [
-	'DATABASE_URL',
-	'NHTSA_API_URL',
-	'PAYSTACK_SECRET_KEY',
-	'RESEND_API_KEY',
-	'FROM_EMAIL',
-	'R2_ENDPOINT',
-	'R2_ACCESS_KEY_ID',
-	'R2_SECRET_ACCESS_KEY',
-	'R2_BUCKET_NAME',
-	'TELEGRAM_BOT_TOKEN',
-	'TELEGRAM_SECRET_TOKEN',
-	'PUBLIC_BASE_URL'
-];
+function getRequiredEnv(varName: keyof Config): string {
+	const value = process.env[varName];
 
-function loadConfig(): Config {
-	const missing: string[] = [];
-
-	for (const varName of requiredEnvVars) {
-		const value = process.env[varName];
-		if (!value || value.trim() === '') {
-			missing.push(varName);
-		}
+	if (!value || value.trim() === '') {
+		throw new Error(
+			`Missing required environment variable: ${varName}. ` +
+				`Set it in your environment or .env file. See .env.example for reference.`
+		);
 	}
 
-	if (missing.length > 0) {
-		console.error('❌ Configuration Error: Missing required environment variables:');
-		missing.forEach((varName) => {
-			console.error(`   - ${varName}`);
-		});
-		console.error('\nPlease set all required environment variables in your .env file.');
-		console.error('See .env.example for reference.');
-		process.exit(1);
-	}
-
-	return {
-		DATABASE_URL: process.env.DATABASE_URL!,
-		NHTSA_API_URL: process.env.NHTSA_API_URL!,
-		PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY!,
-		RESEND_API_KEY: process.env.RESEND_API_KEY!,
-		FROM_EMAIL: process.env.FROM_EMAIL!,
-		R2_ENDPOINT: process.env.R2_ENDPOINT!,
-		R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID!,
-		R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY!,
-		R2_BUCKET_NAME: process.env.R2_BUCKET_NAME!,
-		TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN!,
-		TELEGRAM_SECRET_TOKEN: process.env.TELEGRAM_SECRET_TOKEN!,
-		PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL!
-	};
+	return value;
 }
 
-export const config = loadConfig();
+export const config: Config = {
+	get DATABASE_URL() {
+		return getRequiredEnv('DATABASE_URL');
+	},
+	get NHTSA_API_URL() {
+		return getRequiredEnv('NHTSA_API_URL');
+	},
+	get PAYSTACK_SECRET_KEY() {
+		return getRequiredEnv('PAYSTACK_SECRET_KEY');
+	},
+	get RESEND_API_KEY() {
+		return getRequiredEnv('RESEND_API_KEY');
+	},
+	get FROM_EMAIL() {
+		return getRequiredEnv('FROM_EMAIL');
+	},
+	get TELEGRAM_BOT_TOKEN() {
+		return getRequiredEnv('TELEGRAM_BOT_TOKEN');
+	},
+	get TELEGRAM_SECRET_TOKEN() {
+		return getRequiredEnv('TELEGRAM_SECRET_TOKEN');
+	},
+	get PUBLIC_BASE_URL() {
+		return getRequiredEnv('PUBLIC_BASE_URL');
+	}
+};

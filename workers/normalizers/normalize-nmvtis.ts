@@ -1,9 +1,9 @@
 /**
  * NMVTIS Normalizer
- * 
+ *
  * Extracts title history, title brands, and odometer readings from NMVTIS data.
  * NMVTIS provides official title transfer records from state DMVs.
- * 
+ *
  * Requirements: 11.3, 11.4, 11.5, 42.1-42.5
  */
 
@@ -45,19 +45,19 @@ interface NmvtisResponse {
  */
 function mapTitleBrand(brand: string): TitleBrand {
 	const brandLower = brand.toLowerCase();
-	
+
 	if (brandLower.includes('salvage')) return 'salvage';
 	if (brandLower.includes('rebuilt') || brandLower.includes('reconstructed')) return 'rebuilt';
 	if (brandLower.includes('flood') || brandLower.includes('water')) return 'flood';
 	if (brandLower.includes('hail')) return 'hail';
 	if (brandLower.includes('lemon') || brandLower.includes('manufacturer buyback')) return 'lemon';
-	
+
 	return 'other';
 }
 
 /**
  * Normalize NMVTIS data
- * 
+ *
  * Requirements: 11.3, 11.4, 11.5, 42.1-42.5
  */
 export async function normalizeNmvtis(
@@ -67,11 +67,11 @@ export async function normalizeNmvtis(
 	_rawHtml: string | null
 ): Promise<NormalizedVehicleRecord> {
 	const nmvtisData = rawJson as NmvtisResponse;
-	
+
 	const events: VehicleEvent[] = [];
 	const odometerReadings: OdometerReading[] = [];
 	const titleBrands: TitleBrandRecord[] = [];
-	
+
 	// Extract title history and create title transfer events
 	if (nmvtisData.titleRecords && Array.isArray(nmvtisData.titleRecords)) {
 		for (const record of nmvtisData.titleRecords) {
@@ -87,7 +87,7 @@ export async function normalizeNmvtis(
 					transferType: record.transferType || 'sale'
 				}
 			});
-			
+
 			// Extract odometer reading from title transfer
 			if (record.odometer && record.odometer > 0) {
 				odometerReadings.push({
@@ -99,19 +99,19 @@ export async function normalizeNmvtis(
 			}
 		}
 	}
-	
+
 	// Extract title brands
 	if (nmvtisData.titleBrands && Array.isArray(nmvtisData.titleBrands)) {
 		for (const brand of nmvtisData.titleBrands) {
 			const mappedBrand = mapTitleBrand(brand.brand);
-			
+
 			titleBrands.push({
 				brand: mappedBrand,
 				date: brand.date,
 				state: brand.state,
 				description: brand.description
 			});
-			
+
 			// Create title brand event
 			events.push({
 				type: 'title_brand',
@@ -126,7 +126,7 @@ export async function normalizeNmvtis(
 			});
 		}
 	}
-	
+
 	// Return normalized record
 	return {
 		vin,

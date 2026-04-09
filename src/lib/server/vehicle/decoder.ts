@@ -26,7 +26,7 @@ import type { ComprehensiveVehicleData } from './types';
 export async function decodeVehicle(vin: string): Promise<ComprehensiveVehicleData> {
 	// Fetch data from NHTSA
 	const nhtsaData = await decodeVIN(vin);
-	
+
 	// Validate essential fields
 	if (!nhtsaData.get('Make') || !nhtsaData.get('Model') || !nhtsaData.get('Model Year')) {
 		throw new Error('VIN not found in NHTSA database. Please verify the VIN is correct.');
@@ -58,7 +58,7 @@ export async function decodeVehicle(vin: string): Promise<ComprehensiveVehicleDa
  */
 export async function decodeVINBasic(vin: string) {
 	const data = await decodeVIN(vin);
-	
+
 	return {
 		make: data.get('Make') || 'Unknown',
 		model: data.get('Model') || 'Unknown',

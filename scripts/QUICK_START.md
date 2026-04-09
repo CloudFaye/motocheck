@@ -11,6 +11,7 @@ pnpm dev
 ```
 
 You should see output indicating:
+
 - ✅ Vite dev server running on http://localhost:5173
 - ✅ Worker process started
 - ✅ 13 workers registered successfully
@@ -24,6 +25,7 @@ pnpm test:vin 1HGBH41JXMN109186
 ```
 
 This will:
+
 1. Trigger report generation
 2. Show real-time progress updates
 3. Display the final report with AI assessment
@@ -31,6 +33,7 @@ This will:
 ## Step 3: View the Results
 
 The test script will display:
+
 - **Vehicle Identity**: Year, make, model, trim
 - **AI Assessment**: Risk score and verdict
 - **Timeline Summary**: Events, odometer readings, gaps, recalls
@@ -39,6 +42,7 @@ The test script will display:
 ## What to Expect
 
 ### Normal Flow (2-4 minutes)
+
 ```
 ✅ Report generation started: processing
 ⏳ Polling for status updates...
@@ -52,7 +56,7 @@ Status: FETCHING
 
 Status: NORMALIZING
   ✅ Completed: 6
-  
+
 Status: STITCHING
   ✅ Completed: 1
 
@@ -66,16 +70,16 @@ FINAL REPORT
 ================================================================================
 Vehicle Identity:
   2021 Honda Accord EX
-  
+
 AI Assessment:
   Risk Score: 2/10
   Verdict: buy - Clean history with no major concerns
-  
+
 Timeline Summary:
   Total Events: 12
   Odometer Readings: 5
   Data Sources: nhtsa_decode, nhtsa_recalls, nmvtis, nicb, copart, iaai
-  
+
 ✅ Report completed at: 4/5/2026, 10:30:45 AM
 ================================================================================
 ```
@@ -83,16 +87,19 @@ Timeline Summary:
 ## Troubleshooting
 
 ### "Failed to trigger report generation"
+
 - Check that the dev server is running on http://localhost:5173
 - Verify DATABASE_URL is set in .env
 - Check for errors in the web app terminal
 
 ### "Report stuck in fetching status"
+
 - Check that workers are running (should see in first terminal)
 - Verify all required environment variables are set
 - Check worker logs for specific errors
 
 ### "Network error"
+
 - Ensure API_BASE_URL in .env matches your dev server
 - Default is http://localhost:5173
 - Check firewall settings

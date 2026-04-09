@@ -10,8 +10,8 @@ const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL || DATABASE_URL.trim() === '') {
 	throw new Error(
 		'DATABASE_URL environment variable is required.\n' +
-		'For Railway: Set DATABASE_URL in environment variables.\n' +
-		'For local development: Add DATABASE_URL to your .env file.'
+			'For Railway: Set DATABASE_URL in environment variables.\n' +
+			'For local development: Add DATABASE_URL to your .env file.'
 	);
 }
 

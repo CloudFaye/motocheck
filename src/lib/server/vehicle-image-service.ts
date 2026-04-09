@@ -95,9 +95,7 @@ export class VehicleImageService {
 	private async evictOldestCache(): Promise<void> {
 		try {
 			// Count current cache entries
-			const count = await db
-				.select({ count: sql<number>`count(*)` })
-				.from(vehicleImagesCache);
+			const count = await db.select({ count: sql<number>`count(*)` }).from(vehicleImagesCache);
 
 			const cacheSize = Number(count[0]?.count || 0);
 
@@ -146,13 +144,25 @@ export class VehicleImageService {
 	private inferVehicleType(model: string): string {
 		const modelLower = model.toLowerCase();
 
-		if (modelLower.includes('suv') || modelLower.includes('explorer') || modelLower.includes('tahoe')) {
+		if (
+			modelLower.includes('suv') ||
+			modelLower.includes('explorer') ||
+			modelLower.includes('tahoe')
+		) {
 			return 'suv';
 		}
-		if (modelLower.includes('truck') || modelLower.includes('f-150') || modelLower.includes('silverado')) {
+		if (
+			modelLower.includes('truck') ||
+			modelLower.includes('f-150') ||
+			modelLower.includes('silverado')
+		) {
 			return 'truck';
 		}
-		if (modelLower.includes('van') || modelLower.includes('transit') || modelLower.includes('caravan')) {
+		if (
+			modelLower.includes('van') ||
+			modelLower.includes('transit') ||
+			modelLower.includes('caravan')
+		) {
 			return 'van';
 		}
 
@@ -162,7 +172,12 @@ export class VehicleImageService {
 	/**
 	 * Generate Clay.io style placeholder SVG
 	 */
-	private generatePlaceholderSVG(make: string, model: string, year: string, vehicleType: string): string {
+	private generatePlaceholderSVG(
+		make: string,
+		model: string,
+		year: string,
+		vehicleType: string
+	): string {
 		const silhouettes = {
 			sedan: `
 				<path d="M150,300 L200,280 L250,270 L350,270 L450,270 L550,270 L600,280 L650,300 L650,350 L600,370 L550,380 L250,380 L200,370 L150,350 Z" 
@@ -226,7 +241,7 @@ export class VehicleImageService {
 				model: options.model,
 				year: options.year
 			});
-			
+
 			// Check cache first
 			const cached = await this.getCached(options.vin);
 			if (cached) {
@@ -243,10 +258,10 @@ export class VehicleImageService {
 				this.searchDealerListings(options),
 				this.searchGoogleImages(options),
 				this.searchDuckDuckGo(options)
-			].map(promise => 
+			].map((promise) =>
 				Promise.race([
 					promise,
-					new Promise<ImageResult[]>((_, reject) => 
+					new Promise<ImageResult[]>((_, reject) =>
 						setTimeout(() => reject(new Error('Timeout')), timeout)
 					)
 				])
@@ -276,8 +291,8 @@ export class VehicleImageService {
 			}
 
 			// Prioritize VIN-exact matches over stock images
-			const vinExact = images.filter(img => img.matchType === 'vin-exact');
-			const stock = images.filter(img => img.matchType === 'stock');
+			const vinExact = images.filter((img) => img.matchType === 'vin-exact');
+			const stock = images.filter((img) => img.matchType === 'stock');
 			const prioritized = [...vinExact, ...stock];
 
 			// Sort by date metadata (most recent first)
@@ -289,11 +304,13 @@ export class VehicleImageService {
 			});
 
 			// Limit results if specified
-			const finalResults = options.maxResults 
+			const finalResults = options.maxResults
 				? prioritized.slice(0, options.maxResults)
 				: prioritized;
 
-			console.log(`✅ Returning ${finalResults.length} images (sources: ${finalResults.map(i => i.source).join(', ')})`);
+			console.log(
+				`✅ Returning ${finalResults.length} images (sources: ${finalResults.map((i) => i.source).join(', ')})`
+			);
 
 			// Cache results before returning
 			await this.setCached(options.vin, finalResults);
@@ -311,7 +328,7 @@ export class VehicleImageService {
 	 */
 	private async searchAuctionSites(options: ImageSearchOptions): Promise<ImageResult[]> {
 		await this.rateLimit();
-		
+
 		try {
 			const results: ImageResult[] = [];
 
@@ -322,16 +339,16 @@ export class VehicleImageService {
 			// Note: In production, this would use actual web scraping or API
 			// For now, we'll implement a graceful handler that returns empty results
 			// since we don't have actual auction site access without authentication
-			
+
 			// In a real implementation, we would:
 			// 1. Fetch HTML from auction sites
 			// 2. Parse for VIN matches
 			// 3. Extract image URLs, dates, locations
 			// 4. Return ImageResult objects
-			
+
 			// For now, return empty array as these require authentication
 			// or specific scraping setup that's beyond free tier access
-			
+
 			return results;
 		} catch (error) {
 			console.warn('Auction site search failed:', error);
@@ -345,7 +362,7 @@ export class VehicleImageService {
 	 */
 	private async searchDealerListings(options: ImageSearchOptions): Promise<ImageResult[]> {
 		await this.rateLimit();
-		
+
 		try {
 			const results: ImageResult[] = [];
 
@@ -355,14 +372,14 @@ export class VehicleImageService {
 			// Search Cars.com API (free tier) or similar aggregators
 			// Note: Most dealer APIs require authentication or paid access
 			// This is a graceful implementation that handles the limitation
-			
+
 			// In a real implementation with API access:
 			// 1. Make API request to dealer listing service
 			// 2. Parse JSON response for VIN matches
 			// 3. Extract image URLs, listing dates, descriptions
 			// 4. Validate URLs (HTTP/HTTPS only)
 			// 5. Return ImageResult objects
-			
+
 			// Example of what the implementation would look like with API access:
 			/*
 			const response = await fetch(`https://api.example.com/listings?vin=${vin}`);
@@ -392,7 +409,7 @@ export class VehicleImageService {
 				}
 			}
 			*/
-			
+
 			return results;
 		} catch (error) {
 			console.warn('Dealer listing search failed:', error);
@@ -406,23 +423,23 @@ export class VehicleImageService {
 	 */
 	private async searchGoogleImages(options: ImageSearchOptions): Promise<ImageResult[]> {
 		await this.rateLimit();
-		
+
 		try {
 			const { make, model, year } = options;
 			const results: ImageResult[] = [];
-			
+
 			// Google Custom Search API requires API key and Search Engine ID
 			// Free tier: 100 queries per day
 			const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
 			const searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
-			
+
 			console.log('🔍 Google Search API check:', {
 				hasApiKey: !!apiKey,
 				apiKeyLength: apiKey?.length || 0,
 				hasSearchEngineId: !!searchEngineId,
 				searchEngineIdLength: searchEngineId?.length || 0
 			});
-			
+
 			if (!apiKey || !searchEngineId) {
 				console.warn('⚠️ Google Search API credentials not configured');
 				return [];
@@ -430,7 +447,7 @@ export class VehicleImageService {
 
 			const query = `${year} ${make} ${model} car`;
 			const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}&searchType=image&num=5`;
-			
+
 			console.log('🔍 Google Search query:', { query, year, make, model });
 
 			let retries = 0;
@@ -441,17 +458,17 @@ export class VehicleImageService {
 				try {
 					console.log(`🔍 Attempting Google Search (attempt ${retries + 1}/${maxRetries})...`);
 					const response = await fetch(url);
-					
+
 					console.log('🔍 Google Search response:', {
 						status: response.status,
 						statusText: response.statusText,
 						ok: response.ok
 					});
-					
+
 					// Handle rate limiting with exponential backoff
 					if (response.status === 429) {
 						console.warn(`⚠️ Google Images rate limited, retrying in ${delay}ms...`);
-						await new Promise(resolve => setTimeout(resolve, delay));
+						await new Promise((resolve) => setTimeout(resolve, delay));
 						delay *= 2; // Exponential backoff
 						retries++;
 						continue;
@@ -464,19 +481,19 @@ export class VehicleImageService {
 					}
 
 					const data = await response.json();
-					
+
 					console.log('🔍 Google Search API response:', {
 						hasItems: !!data.items,
 						itemCount: data.items?.length || 0,
 						hasError: !!data.error,
 						error: data.error
 					});
-					
+
 					if (data.error) {
 						console.error('❌ Google Search API error:', data.error);
 						return [];
 					}
-					
+
 					if (!data.items || !Array.isArray(data.items)) {
 						console.warn('⚠️ No items in Google Search response');
 						return [];
@@ -503,7 +520,7 @@ export class VehicleImageService {
 					console.warn('❌ Google Images fetch error:', fetchError);
 					retries++;
 					if (retries < maxRetries) {
-						await new Promise(resolve => setTimeout(resolve, delay));
+						await new Promise((resolve) => setTimeout(resolve, delay));
 						delay *= 2;
 					}
 				}
@@ -523,11 +540,11 @@ export class VehicleImageService {
 	 */
 	private async searchDuckDuckGo(options: ImageSearchOptions): Promise<ImageResult[]> {
 		await this.rateLimit();
-		
+
 		try {
 			const { make, model, year } = options;
 			const results: ImageResult[] = [];
-			
+
 			// DuckDuckGo has an unofficial API endpoint that doesn't require authentication
 			// This is a free service but should be used respectfully with rate limiting
 			const query = `${year} ${make} ${model} car`;
@@ -552,13 +569,13 @@ export class VehicleImageService {
 			}
 
 			const data = await response.json();
-			
+
 			console.log('🦆 DuckDuckGo data:', {
 				hasImage: !!data.Image,
 				hasRelatedTopics: !!data.RelatedTopics,
 				relatedTopicsCount: data.RelatedTopics?.length || 0
 			});
-			
+
 			// DuckDuckGo API returns results in various formats
 			// Check for image results in the response
 			if (data.Image) {
@@ -579,8 +596,7 @@ export class VehicleImageService {
 				for (const topic of data.RelatedTopics.slice(0, 5)) {
 					if (topic.Icon && topic.Icon.URL) {
 						// Filter out placeholder icons
-						if (!topic.Icon.URL.includes('placeholder') && 
-						    !topic.Icon.URL.includes('blank')) {
+						if (!topic.Icon.URL.includes('placeholder') && !topic.Icon.URL.includes('blank')) {
 							results.push({
 								url: topic.Icon.URL,
 								source: 'duckduckgo',
@@ -607,6 +623,6 @@ export class VehicleImageService {
 	 * Rate limiting delay
 	 */
 	private async rateLimit(): Promise<void> {
-		return new Promise(resolve => setTimeout(resolve, this.RATE_LIMIT_DELAY_MS));
+		return new Promise((resolve) => setTimeout(resolve, this.RATE_LIMIT_DELAY_MS));
 	}
 }

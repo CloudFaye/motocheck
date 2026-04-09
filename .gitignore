@@ -30,3 +30,7 @@ docs/*.png
 docs/*.jpg
 docs/*.jpeg
 docs/*.docx
+
+# Local agent/worktree artifacts
+/.kilo
+/.kiro

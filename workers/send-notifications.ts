@@ -1,23 +1,39 @@
 /**
  * Notification Worker
- * 
+ *
  * Sends progress updates and completion notifications to users
  * Sends admin alerts for worker failures and monitoring
  */
 
 import type { Job } from 'pg-boss';
 import { db } from '../src/lib/server/db/index.js';
-import { orders, pipelineReports, normalizedData, lookups } from '../src/lib/server/db/schema.js';
+import { orders, normalizedData, lookups } from '../src/lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
-import { sendProgressUpdate, sendAdminNotification } from '../src/lib/server/email-service.js';
-import { Jobs, REQUIRED_SOURCES } from '../src/lib/server/queue/job-names.js';
-import { bot } from '../src/telegram-bot/index.js';
+import { Jobs, REQUIRED_SOURCES, isRequiredSource } from '../src/lib/server/queue/job-names.js';
 
 interface NotificationJobData {
 	vin: string;
 	type: 'progress' | 'admin_error' | 'admin_timeout';
 	error?: string;
 	stage?: string;
+}
+
+async function getEmailService() {
+	try {
+		return await import('../src/lib/server/email-service.js');
+	} catch (error) {
+		console.warn('[notifications] Email service unavailable:', error);
+		return null;
+	}
+}
+
+async function getTelegramBot() {
+	try {
+		return await import('../src/telegram-bot/index.js');
+	} catch (error) {
+		console.warn('[notifications] Telegram bot unavailable:', error);
+		return null;
+	}
 }
 
 /**
@@ -30,48 +46,46 @@ async function sendUserProgressNotification(vin: string): Promise<void> {
 			id: orders.id,
 			email: orders.email,
 			telegramChatId: orders.telegramChatId,
-			lookupId: orders.lookupId,
+			lookupId: orders.lookupId
 		})
 		.from(orders)
 		.innerJoin(lookups, eq(orders.lookupId, lookups.id))
 		.where(eq(lookups.vin, vin))
 		.limit(1);
-	
+
 	if (!result || result.length === 0) {
 		console.log(`[notifications] No order found for VIN ${vin}`);
 		return;
 	}
-	
+
 	const orderData = result[0];
-	
+
 	// Count completed required sources
-	const completed = await db
-		.select()
-		.from(normalizedData)
-		.where(eq(normalizedData.vin, vin));
-	
-	const completedRequired = completed.filter(c => 
-		REQUIRED_SOURCES.includes(c.source as any)
-	).length;
-	
+	const completed = await db.select().from(normalizedData).where(eq(normalizedData.vin, vin));
+
+	const completedRequired = completed.filter((record) => isRequiredSource(record.source)).length;
+
 	const totalRequired = REQUIRED_SOURCES.length;
 	const progress = Math.round((completedRequired / totalRequired) * 100);
-	
+
 	// Only send if significant progress (25%, 50%, 75%)
 	if (progress !== 25 && progress !== 50 && progress !== 75) {
 		return;
 	}
-	
+
 	// Estimate remaining time (rough estimate: 30 seconds per source)
 	const remaining = totalRequired - completedRequired;
 	const estimatedMinutes = Math.ceil((remaining * 30) / 60);
-	
-	console.log(`[notifications] Sending progress update to ${orderData.email} for VIN ${vin} (${progress}%)`);
-	
+
+	console.log(
+		`[notifications] Sending progress update to ${orderData.email} for VIN ${vin} (${progress}%)`
+	);
+
 	// Send email notification
 	if (orderData.email && !orderData.email.startsWith('telegram')) {
 		try {
-			await sendProgressUpdate(
+			const emailService = await getEmailService();
+			await emailService?.sendProgressUpdate(
 				orderData.email,
 				vin,
 				completedRequired,
@@ -82,19 +96,25 @@ async function sendUserProgressNotification(vin: string): Promise<void> {
 			console.error(`[notifications] Failed to send email to ${orderData.email}:`, error);
 		}
 	}
-	
+
 	// Send Telegram notification
 	if (orderData.telegramChatId) {
 		try {
-			const progressBar = '█'.repeat(Math.floor(progress / 10)) + '░'.repeat(10 - Math.floor(progress / 10));
-			await bot.telegram.sendMessage(
+			const telegramBot = await getTelegramBot();
+			if (!telegramBot?.bot) {
+				return;
+			}
+
+			const progressBar =
+				'█'.repeat(Math.floor(progress / 10)) + '░'.repeat(10 - Math.floor(progress / 10));
+			await telegramBot.bot.telegram.sendMessage(
 				orderData.telegramChatId,
 				`🔄 *Report Processing Update*\n\n` +
-				`VIN: \`${vin}\`\n\n` +
-				`Progress: ${progressBar} ${progress}%\n` +
-				`Sources: ${completedRequired}/${totalRequired} complete\n` +
-				`Estimated time: ~${estimatedMinutes} min\n\n` +
-				`We'll notify you when your report is ready!`,
+					`VIN: \`${vin}\`\n\n` +
+					`Progress: ${progressBar} ${progress}%\n` +
+					`Sources: ${completedRequired}/${totalRequired} complete\n` +
+					`Estimated time: ~${estimatedMinutes} min\n\n` +
+					`We'll notify you when your report is ready!`,
 				{ parse_mode: 'Markdown' }
 			);
 		} catch (error) {
@@ -112,9 +132,10 @@ async function sendAdminErrorNotification(
 	error: string
 ): Promise<void> {
 	console.log(`[notifications] Sending admin error notification for ${stage} on VIN ${vin}`);
-	
+
 	try {
-		await sendAdminNotification(
+		const emailService = await getEmailService();
+		await emailService?.sendAdminNotification(
 			`Worker Error: ${stage}`,
 			`A worker encountered an error while processing VIN ${vin}.`,
 			{
@@ -134,9 +155,10 @@ async function sendAdminErrorNotification(
  */
 async function sendAdminTimeoutNotification(vin: string): Promise<void> {
 	console.log(`[notifications] Sending admin timeout notification for VIN ${vin}`);
-	
+
 	try {
-		await sendAdminNotification(
+		const emailService = await getEmailService();
+		await emailService?.sendAdminNotification(
 			`Report Timeout Warning`,
 			`Report generation for VIN ${vin} has been processing for over 5 minutes. This may indicate stuck workers or API issues.`,
 			{
@@ -156,23 +178,23 @@ async function sendAdminTimeoutNotification(vin: string): Promise<void> {
 async function handleNotification(jobs: Job<NotificationJobData>[]): Promise<void> {
 	for (const job of jobs) {
 		const { vin, type, error, stage } = job.data;
-		
+
 		try {
 			switch (type) {
 				case 'progress':
 					await sendUserProgressNotification(vin);
 					break;
-				
+
 				case 'admin_error':
 					if (stage && error) {
 						await sendAdminErrorNotification(vin, stage, error);
 					}
 					break;
-				
+
 				case 'admin_timeout':
 					await sendAdminTimeoutNotification(vin);
 					break;
-				
+
 				default:
 					console.warn(`[notifications] Unknown notification type: ${type}`);
 			}

@@ -1,6 +1,6 @@
 /**
  * VINInspect Normalizer
- * 
+ *
  * Extracts service records, recalls, and odometer readings from VINInspect.
  * VINInspect provides comprehensive vehicle history including service records.
  */
@@ -53,11 +53,11 @@ export async function normalizeVininspect(
 	_rawHtml: string | null
 ): Promise<NormalizedVehicleRecord> {
 	const vininspectData = rawJson as VINInspectData;
-	
+
 	const events: VehicleEvent[] = [];
 	const odometerReadings: OdometerReading[] = [];
 	const recalls: RecallRecord[] = [];
-	
+
 	// Extract service record events
 	if (vininspectData.serviceRecords && vininspectData.serviceRecords.length > 0) {
 		for (const record of vininspectData.serviceRecords) {
@@ -72,7 +72,7 @@ export async function normalizeVininspect(
 						mileage: record.mileage
 					}
 				});
-				
+
 				// Extract odometer reading from service record
 				if (record.mileage && record.mileage > 0) {
 					odometerReadings.push({
@@ -85,7 +85,7 @@ export async function normalizeVininspect(
 			}
 		}
 	}
-	
+
 	// Extract recalls
 	if (vininspectData.recalls && vininspectData.recalls.length > 0) {
 		for (const recall of vininspectData.recalls) {
@@ -98,7 +98,7 @@ export async function normalizeVininspect(
 					reportReceivedDate: new Date().toISOString(),
 					nhtsaCampaignNumber: recall.campaign
 				});
-				
+
 				events.push({
 					type: 'recall',
 					date: new Date().toISOString(),
@@ -111,9 +111,13 @@ export async function normalizeVininspect(
 			}
 		}
 	}
-	
+
 	// Extract accident history if available
-	if (vininspectData.accidentHistory && vininspectData.accidentHistory !== 'None' && vininspectData.accidentHistory !== 'No accidents reported') {
+	if (
+		vininspectData.accidentHistory &&
+		vininspectData.accidentHistory !== 'None' &&
+		vininspectData.accidentHistory !== 'No accidents reported'
+	) {
 		events.push({
 			type: 'accident',
 			date: new Date().toISOString(), // VINInspect doesn't provide specific dates
@@ -124,7 +128,7 @@ export async function normalizeVininspect(
 			}
 		});
 	}
-	
+
 	// Return normalized record
 	return {
 		vin,

@@ -1,100 +1,169 @@
 ---
-title: VIN Check MVP Spec
-created: 2026-03-25
+title: MotoCheck Current Product Spec
+updated: 2026-04-09
 ---
 
-# Stack
-SvelteKit + Drizzle + PostgreSQL + Flutterwave + Resend + Puppeteer + Telegraf + R2
+# Product Summary
 
-# Flow
-1. User pastes VIN → validate → NHTSA decode → NCS valuation → duty calc → cache
-2. Preview page shows basic info + duty estimate
-3. User pays ₦2,500-5,000 via Flutterwave
-4. Generate PDF → upload R2 → email via Resend
-5. Telegram bot mirrors same flow
+MotoCheck provides VIN-based vehicle intelligence for Nigerian buyers and importers.
 
-# Database (3 tables)
-- **lookups**: vin, decoded_json, ncs_valuation_usd, duty_json, cbr_rate_ngn
-- **orders**: lookup_id, email, amount_ngn, flw_tx_ref, status, source, telegram_chat_id
-- **reports**: order_id, r2_key, pdf_hash, signed_url
+The product currently has two connected flows:
 
-# API Routes
-- `POST /api/vin` - validate, decode, calculate, cache (5 req/min/IP)
-- `POST /api/pay/initiate` - create Flutterwave payment
-- `POST /api/webhook/flutterwave` - HMAC verify → generate PDF → email
-- `POST /api/webhook/telegram` - bot updates
+1. A fast preview flow for VIN decoding and duty estimation.
+2. A richer asynchronous vehicle-history pipeline that builds a timeline and exports a DOCX report.
 
-# Pages
-- `/` - VIN input
-- `/result/[vin]` - preview
-- `/pay/[vin]` - payment form
+# Current Stack
 
-# Core Logic
-- **VIN validation**: 17 chars, ISO 3779 check digit, normalize
-- **NHTSA decode**: fetch from vPIC API, cache 30 days
-- **NCS valuation**: lookup from valuation_table.json
-- **Duty calc**: 35% import + 7% surcharge + 20% NAC + 1% CISS + 0.5% ETLS + 7.5% VAT
-- **PDF**: Puppeteer A4 report with all sections
-- **R2**: private bucket, 72hr signed URLs
+- SvelteKit
+- PostgreSQL + Drizzle ORM
+- `pg-boss` for background jobs
+- Puppeteer + stealth plugin for public web scraping
+- Paystack for payment
+- Resend for email
+- Telegraf for Telegram bot integration
+- `docx` for report export
 
-# Security
-- HMAC-SHA512 webhook verification
-- Rate limiting (5/min VIN, 3/hr bot)
-- timingSafeEqual for HMAC
-- Amount verification before fulfillment
-- Idempotent webhook handlers
+# Core User Flow
 
-# Bot
-- `/start`, `/check [VIN]`, `/help`
-- Webhook mode with secret_token
-- Send PDF directly to chat
+1. User enters a VIN on the landing page.
+2. `POST /api/vin` validates the VIN, decodes NHTSA data, calculates duty, and stores a cached preview in `lookups`.
+3. User proceeds to checkout and pays via Paystack.
+4. Payment webhook or direct pipeline trigger enqueues report-generation jobs.
+5. Workers fetch and scrape available data sources.
+6. Normalized source records are stitched into a single timeline.
+7. Analysis and section-writing produce a buyer-oriented report.
+8. `GET /api/export/:vin` returns a DOCX file when the report is ready.
 
-# Deploy
-- Railway: SvelteKit app + bot worker + Postgres
-- Set 15 env vars
-- Register webhooks (Telegram + Flutterwave)
+# Pipeline Stages
 
----
+## 1. Fetch
 
-# Tasks
+Structured API sources:
 
-## Setup
-- [ ] Initialize Drizzle schema (3 tables)
-- [ ] Configure Railway Postgres + env vars
-- [ ] Setup R2 bucket (private)
+- `nhtsa_decode`
+- `nhtsa_recalls`
+- `nmvtis` when configured
+- `nicb` when available
 
-## Core Modules
-- [ ] VIN validation + normalization (`src/lib/server/vin/validate.ts`)
-- [ ] NHTSA decode client (`src/lib/server/vin/nhtsa.ts`)
-- [ ] NCS valuation lookup (`src/lib/server/duty/valuation.ts`)
-- [ ] Duty calculation engine (`src/lib/server/duty/calculate.ts`)
-- [ ] Rate limiter (`src/lib/server/rate-limit/`)
-- [ ] Flutterwave client + HMAC verify (`src/lib/server/payment/`)
-- [ ] Puppeteer PDF generator (`src/lib/server/pdf/generate.ts`)
-- [ ] R2 upload + signed URLs (`src/lib/server/pdf/storage.ts`)
-- [ ] Resend email client (`src/lib/server/email/`)
+## 2. Scrape
 
-## API Routes
-- [ ] `POST /api/vin` - full decode pipeline
-- [ ] `POST /api/pay/initiate` - Flutterwave payment link
-- [ ] `POST /api/webhook/flutterwave` - payment verification + fulfillment
-- [ ] `POST /api/webhook/telegram` - bot webhook handler
+Public web sources:
 
-## Pages
-- [ ] `/+page.svelte` - VIN input form
-- [ ] `/result/[vin]/+page.svelte` - preview + pay button
-- [ ] `/pay/[vin]/+page.svelte` - email + Flutterwave checkout
+- `copart`
+- `iaai`
+- `autotrader`
+- `cargurus`
+- `jdpower`
+- `vininspect`
 
-## Bot
-- [ ] Telegraf setup (`src/bot/index.js`)
-- [ ] `/start`, `/check`, `/help` commands
-- [ ] VIN decode flow
-- [ ] PDF delivery to chat
+## 3. Normalize
 
-## Deploy
-- [ ] Push schema to Railway Postgres
-- [ ] Deploy SvelteKit app
-- [ ] Deploy bot worker
-- [ ] Register Telegram webhook
-- [ ] Configure Flutterwave webhook
-- [ ] End-to-end smoke test
+Each source is mapped into a shared structure:
+
+- identity
+- timeline events
+- odometer readings
+- title brands
+- recalls
+- damage records
+- market value
+
+## 4. Stitch
+
+The stitcher:
+
+- merges normalized records into one chronological timeline
+- inserts odometer readings
+- detects mileage anomalies
+- detects long history gaps
+- stores the stitched result in `pipeline_reports`
+
+## 5. Analyze
+
+The analyzer:
+
+- computes risk flags and verdict text
+- uses a configured LLM provider when available
+- falls back to deterministic rules when no provider is configured or parsing fails
+
+## 6. Write Sections
+
+Section generation:
+
+- writes reusable report sections to `report_sections`
+- uses the LLM when available
+- falls back to deterministic prose when needed
+
+# Completion Rules
+
+Required for pipeline completion:
+
+- `nhtsa_decode`
+- `nhtsa_recalls`
+
+Optional enrichment sources do not block completion:
+
+- `nmvtis`
+- `nicb`
+- `copart`
+- `iaai`
+- `autotrader`
+- `cargurus`
+- `jdpower`
+- `vininspect`
+
+This is deliberate. Public scrapers are volatile and the report should still complete when enrichment sources are unavailable.
+
+# Data Model
+
+Preview/payment flow:
+
+- `lookups`
+- `orders`
+- `reports` kept for backward compatibility with older delivery concepts
+
+Pipeline flow:
+
+- `pipeline_reports`
+- `raw_data`
+- `normalized_data`
+- `odometer_readings`
+- `vehicle_photos`
+- `report_sections`
+- `pipeline_log`
+
+# Runtime Endpoints
+
+Preview/payment:
+
+- `POST /api/vin`
+- `POST /api/pay/initiate`
+- `POST /api/webhook/paystack`
+
+Pipeline:
+
+- `POST /api/report`
+- `GET /api/report?vin=...`
+- `GET /api/status/:vin`
+- `GET /api/report/:vin/sections`
+- `GET /api/report/:vin/photos`
+- `GET /api/report/:vin/odometer`
+- `GET /api/export/:vin`
+
+Health:
+
+- `GET /api/health`
+- `GET /health`
+
+# Current Non-Goals
+
+- Guaranteed access to premium NMVTIS data without credentials
+- Blocking report completion on scraper success
+- Browser-based PDF generation in the active pipeline
+
+# Working Principles For Future Changes
+
+- Keep one active report-generation path.
+- Prefer deterministic fallbacks over hard failures.
+- Treat scrapers as enrichment, not as guaranteed infrastructure.
+- Keep docs aligned with runtime behavior and remove dead modules rather than leaving dormant alternatives around.

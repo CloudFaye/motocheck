@@ -1,6 +1,6 @@
 /**
  * Unified LLM Service
- * 
+ *
  * Supports multiple LLM providers:
  * - Alibaba Cloud Model Studio (default, free tier available)
  * - MuleRouter (free credits available)
@@ -8,7 +8,7 @@
  * - Anthropic Claude (premium option)
  * - OpenAI (GPT-4o-mini, affordable and reliable)
  * - OpenRouter (access to many open-source models)
- * 
+ *
  * Provider selection via LLM_PROVIDER environment variable:
  * - "alibaba" (default) - Uses Alibaba Cloud Model Studio API (Qwen models)
  * - "mulerouter" - Uses MuleRouter API (various models)
@@ -50,12 +50,12 @@ let openrouterClient: OpenAI | null = null;
 if (LLM_PROVIDER === 'alibaba' && ALIBABA_API_KEY) {
 	alibabaClient = new OpenAI({
 		apiKey: ALIBABA_API_KEY,
-		baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+		baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
 	});
 } else if (LLM_PROVIDER === 'mulerouter' && MULEROUTER_API_KEY) {
 	mulerouterClient = new OpenAI({
 		apiKey: MULEROUTER_API_KEY,
-		baseURL: 'https://api.mulerouter.ai/vendors/openai/v1',
+		baseURL: 'https://api.mulerouter.ai/vendors/openai/v1'
 	});
 } else if (LLM_PROVIDER === 'gemini' && GEMINI_API_KEY) {
 	geminiClient = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -66,7 +66,7 @@ if (LLM_PROVIDER === 'alibaba' && ALIBABA_API_KEY) {
 } else if (LLM_PROVIDER === 'openrouter' && OPENROUTER_API_KEY) {
 	openrouterClient = new OpenAI({
 		apiKey: OPENROUTER_API_KEY,
-		baseURL: 'https://openrouter.ai/api/v1',
+		baseURL: 'https://openrouter.ai/api/v1'
 	});
 }
 
@@ -109,7 +109,9 @@ export async function generateText(
 	// Use MuleRouter
 	if (LLM_PROVIDER === 'mulerouter') {
 		if (!mulerouterClient) {
-			throw new Error('MuleRouter API key not configured. Set MULEROUTER_API_KEY environment variable.');
+			throw new Error(
+				'MuleRouter API key not configured. Set MULEROUTER_API_KEY environment variable.'
+			);
 		}
 
 		return await generateWithMuleRouter(messages, maxTokens, temperature, timeout);
@@ -127,7 +129,9 @@ export async function generateText(
 	// Use Anthropic
 	if (LLM_PROVIDER === 'anthropic') {
 		if (!anthropicClient) {
-			throw new Error('Anthropic API key not configured. Set ANTHROPIC_API_KEY environment variable.');
+			throw new Error(
+				'Anthropic API key not configured. Set ANTHROPIC_API_KEY environment variable.'
+			);
 		}
 
 		return await generateWithAnthropic(messages, maxTokens, temperature, timeout);
@@ -145,7 +149,9 @@ export async function generateText(
 	// Use OpenRouter
 	if (LLM_PROVIDER === 'openrouter') {
 		if (!openrouterClient) {
-			throw new Error('OpenRouter API key not configured. Set OPENROUTER_API_KEY environment variable.');
+			throw new Error(
+				'OpenRouter API key not configured. Set OPENROUTER_API_KEY environment variable.'
+			);
 		}
 
 		return await generateWithOpenRouter(messages, maxTokens, temperature, timeout);
@@ -168,9 +174,9 @@ async function generateWithAlibaba(
 	}
 
 	// Convert messages to OpenAI-compatible format
-	const alibabaMessages = messages.map(m => ({
+	const alibabaMessages = messages.map((m) => ({
 		role: m.role as 'system' | 'user' | 'assistant',
-		content: m.content,
+		content: m.content
 	}));
 
 	// Create timeout promise
@@ -184,9 +190,9 @@ async function generateWithAlibaba(
 			model: ALIBABA_MODEL,
 			messages: alibabaMessages,
 			max_tokens: maxTokens,
-			temperature: temperature,
+			temperature: temperature
 		}),
-		timeoutPromise,
+		timeoutPromise
 	]);
 
 	const content = response.choices[0]?.message?.content;
@@ -198,7 +204,7 @@ async function generateWithAlibaba(
 		content: content,
 		model: ALIBABA_MODEL,
 		provider: 'alibaba',
-		tokensUsed: response.usage?.total_tokens,
+		tokensUsed: response.usage?.total_tokens
 	};
 }
 
@@ -216,9 +222,9 @@ async function generateWithMuleRouter(
 	}
 
 	// Convert messages to OpenAI-compatible format
-	const mulerouterMessages = messages.map(m => ({
+	const mulerouterMessages = messages.map((m) => ({
 		role: m.role as 'system' | 'user' | 'assistant',
-		content: m.content,
+		content: m.content
 	}));
 
 	// Create timeout promise
@@ -232,9 +238,9 @@ async function generateWithMuleRouter(
 			model: MULEROUTER_MODEL,
 			messages: mulerouterMessages,
 			max_tokens: maxTokens,
-			temperature: temperature,
+			temperature: temperature
 		}),
-		timeoutPromise,
+		timeoutPromise
 	]);
 
 	const content = response.choices[0]?.message?.content;
@@ -246,7 +252,7 @@ async function generateWithMuleRouter(
 		content: content,
 		model: MULEROUTER_MODEL,
 		provider: 'mulerouter',
-		tokensUsed: response.usage?.total_tokens,
+		tokensUsed: response.usage?.total_tokens
 	};
 }
 
@@ -267,18 +273,18 @@ async function generateWithGemini(
 		model: GEMINI_MODEL,
 		generationConfig: {
 			maxOutputTokens: maxTokens,
-			temperature: temperature,
-		},
+			temperature: temperature
+		}
 	});
 
 	// Convert messages to Gemini format
 	// Gemini doesn't have a system role, so we prepend system messages to the first user message
-	const systemMessages = messages.filter(m => m.role === 'system');
-	const conversationMessages = messages.filter(m => m.role !== 'system');
+	const systemMessages = messages.filter((m) => m.role === 'system');
+	const conversationMessages = messages.filter((m) => m.role !== 'system');
 
 	let prompt = '';
 	if (systemMessages.length > 0) {
-		prompt = systemMessages.map(m => m.content).join('\n\n') + '\n\n';
+		prompt = systemMessages.map((m) => m.content).join('\n\n') + '\n\n';
 	}
 
 	// For single-turn conversations (most common in our use case)
@@ -291,10 +297,7 @@ async function generateWithGemini(
 		});
 
 		// Race between API call and timeout
-		const result = await Promise.race([
-			model.generateContent(prompt),
-			timeoutPromise,
-		]);
+		const result = await Promise.race([model.generateContent(prompt), timeoutPromise]);
 
 		const response = result.response;
 		const text = response.text();
@@ -303,16 +306,16 @@ async function generateWithGemini(
 			content: text,
 			model: GEMINI_MODEL,
 			provider: 'gemini',
-			tokensUsed: response.usageMetadata?.totalTokenCount,
+			tokensUsed: response.usageMetadata?.totalTokenCount
 		};
 	}
 
 	// For multi-turn conversations, use chat
 	const chat = model.startChat({
-		history: conversationMessages.slice(0, -1).map(m => ({
+		history: conversationMessages.slice(0, -1).map((m) => ({
 			role: m.role === 'user' ? 'user' : 'model',
-			parts: [{ text: m.content }],
-		})),
+			parts: [{ text: m.content }]
+		}))
 	});
 
 	const lastMessage = conversationMessages[conversationMessages.length - 1];
@@ -322,7 +325,7 @@ async function generateWithGemini(
 
 	const result = await Promise.race([
 		chat.sendMessage(prompt + lastMessage.content),
-		timeoutPromise,
+		timeoutPromise
 	]);
 
 	const response = result.response;
@@ -332,7 +335,7 @@ async function generateWithGemini(
 		content: text,
 		model: GEMINI_MODEL,
 		provider: 'gemini',
-		tokensUsed: response.usageMetadata?.totalTokenCount,
+		tokensUsed: response.usageMetadata?.totalTokenCount
 	};
 }
 
@@ -350,12 +353,12 @@ async function generateWithAnthropic(
 	}
 
 	// Extract system message if present
-	const systemMessage = messages.find(m => m.role === 'system')?.content;
+	const systemMessage = messages.find((m) => m.role === 'system')?.content;
 	const conversationMessages = messages
-		.filter(m => m.role !== 'system')
-		.map(m => ({
+		.filter((m) => m.role !== 'system')
+		.map((m) => ({
 			role: m.role as 'user' | 'assistant',
-			content: m.content,
+			content: m.content
 		}));
 
 	// Create timeout promise
@@ -370,9 +373,9 @@ async function generateWithAnthropic(
 			max_tokens: maxTokens,
 			temperature: temperature,
 			system: systemMessage,
-			messages: conversationMessages,
+			messages: conversationMessages
 		}),
-		timeoutPromise,
+		timeoutPromise
 	]);
 
 	const content = response.content[0];
@@ -384,7 +387,7 @@ async function generateWithAnthropic(
 		content: content.text,
 		model: ANTHROPIC_MODEL,
 		provider: 'anthropic',
-		tokensUsed: response.usage.input_tokens + response.usage.output_tokens,
+		tokensUsed: response.usage.input_tokens + response.usage.output_tokens
 	};
 }
 
@@ -402,9 +405,9 @@ async function generateWithOpenAI(
 	}
 
 	// Convert messages to OpenAI format
-	const openaiMessages = messages.map(m => ({
+	const openaiMessages = messages.map((m) => ({
 		role: m.role as 'system' | 'user' | 'assistant',
-		content: m.content,
+		content: m.content
 	}));
 
 	// Create timeout promise
@@ -418,9 +421,9 @@ async function generateWithOpenAI(
 			model: OPENAI_MODEL,
 			messages: openaiMessages,
 			max_tokens: maxTokens,
-			temperature: temperature,
+			temperature: temperature
 		}),
-		timeoutPromise,
+		timeoutPromise
 	]);
 
 	const content = response.choices[0]?.message?.content;
@@ -432,7 +435,7 @@ async function generateWithOpenAI(
 		content: content,
 		model: OPENAI_MODEL,
 		provider: 'openai',
-		tokensUsed: response.usage?.total_tokens,
+		tokensUsed: response.usage?.total_tokens
 	};
 }
 
@@ -450,9 +453,9 @@ async function generateWithOpenRouter(
 	}
 
 	// Convert messages to OpenRouter format (same as OpenAI)
-	const openrouterMessages = messages.map(m => ({
+	const openrouterMessages = messages.map((m) => ({
 		role: m.role as 'system' | 'user' | 'assistant',
-		content: m.content,
+		content: m.content
 	}));
 
 	// Create timeout promise
@@ -466,9 +469,9 @@ async function generateWithOpenRouter(
 			model: OPENROUTER_MODEL,
 			messages: openrouterMessages,
 			max_tokens: maxTokens,
-			temperature: temperature,
+			temperature: temperature
 		}),
-		timeoutPromise,
+		timeoutPromise
 	]);
 
 	const content = response.choices[0]?.message?.content;
@@ -480,7 +483,7 @@ async function generateWithOpenRouter(
 		content: content,
 		model: OPENROUTER_MODEL,
 		provider: 'openrouter',
-		tokensUsed: response.usage?.total_tokens,
+		tokensUsed: response.usage?.total_tokens
 	};
 }
 
@@ -496,7 +499,7 @@ export function getLLMInfo(): {
 		return {
 			provider: 'alibaba',
 			model: ALIBABA_MODEL,
-			configured: !!ALIBABA_API_KEY,
+			configured: !!ALIBABA_API_KEY
 		};
 	}
 
@@ -504,7 +507,7 @@ export function getLLMInfo(): {
 		return {
 			provider: 'mulerouter',
 			model: MULEROUTER_MODEL,
-			configured: !!MULEROUTER_API_KEY,
+			configured: !!MULEROUTER_API_KEY
 		};
 	}
 
@@ -512,7 +515,7 @@ export function getLLMInfo(): {
 		return {
 			provider: 'gemini',
 			model: GEMINI_MODEL,
-			configured: !!GEMINI_API_KEY,
+			configured: !!GEMINI_API_KEY
 		};
 	}
 
@@ -520,7 +523,7 @@ export function getLLMInfo(): {
 		return {
 			provider: 'anthropic',
 			model: ANTHROPIC_MODEL,
-			configured: !!ANTHROPIC_API_KEY,
+			configured: !!ANTHROPIC_API_KEY
 		};
 	}
 
@@ -528,7 +531,7 @@ export function getLLMInfo(): {
 		return {
 			provider: 'openai',
 			model: OPENAI_MODEL,
-			configured: !!OPENAI_API_KEY,
+			configured: !!OPENAI_API_KEY
 		};
 	}
 
@@ -536,13 +539,13 @@ export function getLLMInfo(): {
 		return {
 			provider: 'openrouter',
 			model: OPENROUTER_MODEL,
-			configured: !!OPENROUTER_API_KEY,
+			configured: !!OPENROUTER_API_KEY
 		};
 	}
 
 	return {
 		provider: LLM_PROVIDER,
 		model: 'unknown',
-		configured: false,
+		configured: false
 	};
 }

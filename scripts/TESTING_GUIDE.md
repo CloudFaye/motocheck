@@ -5,11 +5,13 @@ This guide provides sample VINs and testing scenarios for validating the vehicle
 ## Prerequisites
 
 1. Ensure the development environment is running:
+
    ```bash
    pnpm dev
    ```
 
 2. Verify the database is accessible and migrations are applied:
+
    ```bash
    pnpm db:migrate
    ```
@@ -23,11 +25,13 @@ This guide provides sample VINs and testing scenarios for validating the vehicle
 **Objective**: Test a vehicle with no accidents, no title brands, and normal mileage progression.
 
 **Sample VINs**:
+
 - `1HGBH41JXMN109186` - 2021 Honda Accord
 - `5YJSA1E14HF000001` - Tesla Model S
 - `1G1ZD5ST0LF000001` - Chevrolet Malibu
 
 **Expected Results**:
+
 - ✅ All data sources complete successfully
 - ✅ No title brands detected
 - ✅ No odometer anomalies
@@ -37,11 +41,13 @@ This guide provides sample VINs and testing scenarios for validating the vehicle
 - ✅ All 9 report sections generated
 
 **Test Command**:
+
 ```bash
 pnpm test:vin 1HGBH41JXMN109186
 ```
 
 **Validation Checklist**:
+
 - [ ] Report status transitions: pending → fetching → normalizing → stitching → analyzing → ready
 - [ ] Vehicle identity populated (year, make, model)
 - [ ] Timeline contains events from all required sources
@@ -57,11 +63,13 @@ pnpm test:vin 1HGBH41JXMN109186
 **Objective**: Test a vehicle with auction history, damage records, and title brands.
 
 **Sample VINs**:
+
 - Look for VINs on Copart.com with "salvage" or "rebuilt" titles
 - Search IAAI.com for vehicles with damage history
 - Use VINs from vehicles with known accident history
 
 **Expected Results**:
+
 - ✅ Copart and/or IAAI data successfully scraped
 - ✅ Title brands detected (salvage, rebuilt, flood, etc.)
 - ✅ Damage records included in timeline
@@ -71,11 +79,13 @@ pnpm test:vin 1HGBH41JXMN109186
 - ✅ Accident analysis section highlights damage severity
 
 **Test Command**:
+
 ```bash
 pnpm test:vin <SALVAGE_VIN>
 ```
 
 **Validation Checklist**:
+
 - [ ] Copart/IAAI scraper completes successfully
 - [ ] Title brands array populated in timeline
 - [ ] Damage records array populated in timeline
@@ -91,11 +101,13 @@ pnpm test:vin <SALVAGE_VIN>
 **Objective**: Test odometer anomaly detection with high mileage or unusual mileage rates.
 
 **Sample VINs**:
+
 - Look for vehicles with 200,000+ miles
 - Search for commercial vehicles (taxis, fleet vehicles)
 - Use VINs with known mileage rollback history
 
 **Expected Results**:
+
 - ✅ Multiple odometer readings from various sources
 - ✅ Anomaly detection flags unusual mileage rates (>50k miles/year)
 - ✅ Expected mileage calculation based on vehicle age
@@ -104,11 +116,13 @@ pnpm test:vin <SALVAGE_VIN>
 - ✅ LLM verdict mentions mileage as a factor
 
 **Test Command**:
+
 ```bash
 pnpm test:vin <HIGH_MILEAGE_VIN>
 ```
 
 **Validation Checklist**:
+
 - [ ] Odometer readings table populated with multiple entries
 - [ ] isAnomaly flag set to true for unusual readings
 - [ ] anomalyNote describes the issue (e.g., "unusual rate")
@@ -124,11 +138,13 @@ pnpm test:vin <HIGH_MILEAGE_VIN>
 **Objective**: Test gap detection for vehicles with 18+ month periods without recorded events.
 
 **Sample VINs**:
+
 - Look for older vehicles (15+ years old)
 - Search for vehicles with sparse title transfer history
 - Use VINs from states with infrequent inspections
 
 **Expected Results**:
+
 - ✅ Gaps array populated with detected periods
 - ✅ Gap severity classified (medium: 18-36 months, high: 36+ months)
 - ✅ Gap analysis section explains each period
@@ -137,11 +153,13 @@ pnpm test:vin <HIGH_MILEAGE_VIN>
 - ✅ Buyers checklist includes gap-related inspection items
 
 **Test Command**:
+
 ```bash
 pnpm test:vin <GAP_HISTORY_VIN>
 ```
 
 **Validation Checklist**:
+
 - [ ] Gaps array populated in timeline
 - [ ] Each gap includes startDate, endDate, durationMonths, severity
 - [ ] Gaps exceeding 36 months marked as "high" severity
@@ -156,11 +174,13 @@ pnpm test:vin <GAP_HISTORY_VIN>
 **Objective**: Test recall detection and reporting.
 
 **Sample VINs**:
+
 - Check NHTSA recall database: https://www.nhtsa.gov/recalls
 - Look for VINs with open safety recalls
 - Use VINs from manufacturers with recent recall campaigns
 
 **Expected Results**:
+
 - ✅ NHTSA recalls data fetched successfully
 - ✅ Recalls array populated in timeline
 - ✅ Each recall includes campaign number, component, summary, remedy
@@ -169,11 +189,13 @@ pnpm test:vin <GAP_HISTORY_VIN>
 - ✅ Buyers checklist includes recall verification
 
 **Test Command**:
+
 ```bash
 pnpm test:vin <RECALL_VIN>
 ```
 
 **Validation Checklist**:
+
 - [ ] NHTSA recalls fetcher completes successfully
 - [ ] Recalls array populated in timeline
 - [ ] Each recall includes nhtsaCampaignNumber
@@ -205,6 +227,7 @@ pnpm test:vin <VIN>
 ### 3. Monitor Progress
 
 The test script will display:
+
 - Initial trigger confirmation
 - Real-time status updates
 - Pipeline stage progress
@@ -214,6 +237,7 @@ The test script will display:
 ### 4. Verify Results
 
 After completion, verify:
+
 - Database records in `pipelineReports` table
 - Raw data in `raw_data` table
 - Normalized data in `normalized_data` table
@@ -253,11 +277,13 @@ curl "http://localhost:5173/api/export/<VIN>" -o report.docx
 ### Issue: Report stuck in "fetching" status
 
 **Possible Causes**:
+
 - Worker process not running
 - Queue not processing jobs
 - External API timeout or rate limiting
 
 **Solutions**:
+
 1. Check worker process is running: `ps aux | grep tsx`
 2. Check worker logs for errors
 3. Verify environment variables are set
@@ -266,11 +292,13 @@ curl "http://localhost:5173/api/export/<VIN>" -o report.docx
 ### Issue: Scraper workers failing
 
 **Possible Causes**:
+
 - Bot detection by auction sites
 - Missing Puppeteer dependencies
 - Network connectivity issues
 
 **Solutions**:
+
 1. Verify stealth plugin is enabled
 2. Check User-Agent headers
 3. Reduce scraper concurrency
@@ -279,11 +307,13 @@ curl "http://localhost:5173/api/export/<VIN>" -o report.docx
 ### Issue: LLM workers timing out
 
 **Possible Causes**:
+
 - Anthropic API rate limiting
 - Invalid API key
 - Network latency
 
 **Solutions**:
+
 1. Verify ANTHROPIC_API_KEY is set correctly
 2. Check Anthropic API status
 3. Increase timeout in worker configuration
@@ -292,11 +322,13 @@ curl "http://localhost:5173/api/export/<VIN>" -o report.docx
 ### Issue: Missing data sources
 
 **Possible Causes**:
+
 - Optional sources failed (AutoTrader, CarGurus)
 - Required sources failed (blocks stitching)
 - VIN not found in data source
 
 **Solutions**:
+
 1. Check pipeline_log for specific errors
 2. Verify VIN exists in external databases
 3. Test with known-good VINs
@@ -315,6 +347,7 @@ Expected completion times (approximate):
 - **Recall VIN**: 2-4 minutes
 
 Factors affecting completion time:
+
 - Number of data sources with results
 - External API response times
 - Scraper complexity (auction sites slower)

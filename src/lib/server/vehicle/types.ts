@@ -121,7 +121,7 @@ export interface ComprehensiveVehicleData {
 	market: MarketCompliance;
 	validation: ValidationInfo;
 	recalls: RecallInfo[];
-	
+
 	// New comprehensive fields (all optional for backward compatibility)
 	images?: ImageResult[];
 	ownership?: OwnershipHistory;

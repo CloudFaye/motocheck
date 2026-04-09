@@ -13,10 +13,8 @@ export async function sendReport(
 	docxBuffer: Buffer,
 	pdfBuffer?: Buffer
 ): Promise<void> {
-	const subject = pdfBuffer 
-		? `Your Vehicle Reports - ${vin}`
-		: `Your Vehicle Report - ${vin}`;
-	
+	const subject = pdfBuffer ? `Your Vehicle Reports - ${vin}` : `Your Vehicle Report - ${vin}`;
+
 	const attachments = pdfBuffer
 		? [
 				{
@@ -27,14 +25,14 @@ export async function sendReport(
 					filename: `motocheck-report-${vin}.pdf`,
 					content: pdfBuffer
 				}
-		  ]
+			]
 		: [
 				{
 					filename: `motocheck-report-${vin}.${docxBuffer ? 'docx' : 'pdf'}`,
 					content: docxBuffer
 				}
-		  ];
-	
+			];
+
 	// Plain text version for email clients that don't support HTML
 	const textContent = `
 MotoCheck - Your Vehicle Report${pdfBuffer ? 's are' : ' is'} Ready
@@ -45,9 +43,10 @@ VEHICLE IDENTIFICATION NUMBER
 ${vin}
 
 ATTACHED FILES
-${pdfBuffer 
-	? '• Word Document (DOCX) - Editable format, perfect for adding notes\n• PDF Document - Print-ready format for archiving'
-	: '• Vehicle Report - Your comprehensive vehicle history'
+${
+	pdfBuffer
+		? '• Word Document (DOCX) - Editable format, perfect for adding notes\n• PDF Document - Print-ready format for archiving'
+		: '• Vehicle Report - Your comprehensive vehicle history'
 }
 
 WHAT'S IN YOUR REPORT
@@ -57,9 +56,10 @@ WHAT'S IN YOUR REPORT
 ✓ Safety recall information
 ✓ Manufacturing and compliance data
 
-${pdfBuffer 
-	? 'TIP: Use the Word document to add notes, highlight important sections, or share with your clearing agent. The PDF is perfect for printing or long-term storage.'
-	: 'TIP: Open the Word document in Microsoft Word, Google Docs, or any compatible word processor to edit and customize your report.'
+${
+	pdfBuffer
+		? 'TIP: Use the Word document to add notes, highlight important sections, or share with your clearing agent. The PDF is perfect for printing or long-term storage.'
+		: 'TIP: Open the Word document in Microsoft Word, Google Docs, or any compatible word processor to edit and customize your report.'
 }
 
 Questions? Contact us at support@motocheck.ng
@@ -71,7 +71,7 @@ www.motocheck.ng
 
 This report is based on data from NHTSA and official Nigerian Customs Service valuation tables. Always verify critical details independently before making purchase decisions.
 `;
-	
+
 	await resend.emails.send({
 		from: config.FROM_EMAIL,
 		to,
@@ -143,9 +143,10 @@ This report is based on data from NHTSA and official Nigerian Customs Service va
 												<td valign="top">
 													<p style="margin: 0 0 10px 0; font-size: 15px; font-weight: 700; color: #92400e;">Attached Files</p>
 													<p style="margin: 0; font-size: 14px; line-height: 1.7; color: #78350f;">
-														${pdfBuffer 
-															? '• <strong>Word Document (DOCX)</strong> - Editable format, perfect for adding notes<br>• <strong>PDF Document</strong> - Print-ready format for archiving'
-															: '• <strong>Vehicle Report</strong> - Your comprehensive vehicle history'
+														${
+															pdfBuffer
+																? '• <strong>Word Document (DOCX)</strong> - Editable format, perfect for adding notes<br>• <strong>PDF Document</strong> - Print-ready format for archiving'
+																: '• <strong>Vehicle Report</strong> - Your comprehensive vehicle history'
 														}
 													</p>
 												</td>
@@ -167,9 +168,10 @@ This report is based on data from NHTSA and official Nigerian Customs Service va
 												<td valign="top">
 													<p style="margin: 0 0 10px 0; font-size: 15px; font-weight: 700; color: #1e40af;">Quick Tip</p>
 													<p style="margin: 0; font-size: 14px; line-height: 1.7; color: #1e3a8a;">
-														${pdfBuffer 
-															? 'Use the Word document to add notes, highlight important sections, or share with your clearing agent. The PDF is perfect for printing or long-term storage.'
-															: 'Open the Word document in Microsoft Word, Google Docs, or any compatible word processor to edit and customize your report.'
+														${
+															pdfBuffer
+																? 'Use the Word document to add notes, highlight important sections, or share with your clearing agent. The PDF is perfect for printing or long-term storage.'
+																: 'Open the Word document in Microsoft Word, Google Docs, or any compatible word processor to edit and customize your report.'
 														}
 													</p>
 												</td>
@@ -273,7 +275,6 @@ This report is based on data from NHTSA and official Nigerian Customs Service va
 	});
 }
 
-
 /**
  * Send report processing status update to user
  */
@@ -285,7 +286,7 @@ export async function sendProgressUpdate(
 	estimatedMinutes: number
 ): Promise<void> {
 	const progress = Math.round((completedSources / totalSources) * 100);
-	
+
 	await resend.emails.send({
 		from: config.FROM_EMAIL,
 		to,
@@ -376,15 +377,15 @@ www.motocheck.ng
 export async function sendAdminNotification(
 	subject: string,
 	message: string,
-	details?: Record<string, any>
+	details?: Record<string, unknown>
 ): Promise<void> {
 	const adminEmail = process.env.ADMIN_EMAIL;
 	if (!adminEmail) {
 		console.warn('[email-service] ADMIN_EMAIL not configured, skipping admin notification');
 		return;
 	}
-	
-	const detailsHtml = details 
+
+	const detailsHtml = details
 		? `
 			<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 24px; background-color: #f8fafc; border-radius: 8px; padding: 16px; font-family: 'Courier New', monospace; font-size: 13px;">
 				<tr>
@@ -395,7 +396,7 @@ export async function sendAdminNotification(
 			</table>
 		`
 		: '';
-	
+
 	await resend.emails.send({
 		from: config.FROM_EMAIL,
 		to: adminEmail,
@@ -468,30 +469,34 @@ export async function sendAdminDigest(
 ): Promise<void> {
 	const adminEmail = process.env.ADMIN_EMAIL;
 	if (!adminEmail) return;
-	
-	const successRate = stats.totalJobs > 0 
-		? Math.round((stats.completedJobs / stats.totalJobs) * 100) 
-		: 0;
-	
-	const errorsHtml = stats.errors.length > 0
-		? `
+
+	const successRate =
+		stats.totalJobs > 0 ? Math.round((stats.completedJobs / stats.totalJobs) * 100) : 0;
+
+	const errorsHtml =
+		stats.errors.length > 0
+			? `
 			<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 24px;">
 				<tr>
 					<td>
 						<p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: #0f172a;">Recent Errors</p>
-						${stats.errors.map(err => `
+						${stats.errors
+							.map(
+								(err) => `
 							<div style="margin-bottom: 12px; padding: 12px; background-color: #fef2f2; border-left: 4px solid #ef4444; border-radius: 6px;">
 								<p style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #991b1b;">${err.job}</p>
 								<p style="margin: 0 0 4px 0; font-size: 13px; color: #7f1d1d;">${err.error}</p>
 								<p style="margin: 0; font-size: 12px; color: #991b1b;">Occurrences: ${err.count}</p>
 							</div>
-						`).join('')}
+						`
+							)
+							.join('')}
 					</td>
 				</tr>
 			</table>
 		`
-		: '';
-	
+			: '';
+
 	await resend.emails.send({
 		from: config.FROM_EMAIL,
 		to: adminEmail,

@@ -1,9 +1,9 @@
 /**
  * IAAI Normalizer
- * 
+ *
  * Extracts auction events, damage records, and odometer readings from IAAI data.
  * IAAI (Insurance Auto Auctions) is another major salvage vehicle auction platform.
- * 
+ *
  * Requirements: 11.3, 11.4, 41.1-41.5, 84.1-84.5
  */
 
@@ -37,25 +37,25 @@ interface IaaiData {
  */
 function generateAuctionDescription(data: IaaiData): string {
 	const parts: string[] = ['Vehicle sold at IAAI auction'];
-	
+
 	if (data.location) {
 		parts.push(`in ${data.location}`);
 	}
-	
+
 	if (data.damageType) {
 		parts.push(`with ${data.damageType.toLowerCase()} damage`);
 	}
-	
+
 	if (data.salePrice) {
 		parts.push(`for $${data.salePrice.toLocaleString()}`);
 	}
-	
+
 	return parts.join(' ');
 }
 
 /**
  * Normalize IAAI auction data
- * 
+ *
  * Requirements: 11.3, 11.4, 41.1-41.5, 84.1-84.5
  */
 export async function normalizeIaai(
@@ -65,11 +65,11 @@ export async function normalizeIaai(
 	_rawHtml: string | null
 ): Promise<NormalizedVehicleRecord> {
 	const iaaiData = rawJson as IaaiData;
-	
+
 	const events: VehicleEvent[] = [];
 	const odometerReadings: OdometerReading[] = [];
 	const damageRecords: DamageRecord[] = [];
-	
+
 	// Extract auction sale event
 	if (iaaiData.saleDate) {
 		events.push({
@@ -88,7 +88,7 @@ export async function normalizeIaai(
 			}
 		});
 	}
-	
+
 	// Extract damage record
 	if (iaaiData.damageType && iaaiData.saleDate) {
 		damageRecords.push({
@@ -99,7 +99,7 @@ export async function normalizeIaai(
 			location: iaaiData.location || 'Unknown'
 		});
 	}
-	
+
 	// Extract odometer reading from auction data
 	if (iaaiData.mileage && iaaiData.mileage > 0 && iaaiData.saleDate) {
 		odometerReadings.push({
@@ -109,7 +109,7 @@ export async function normalizeIaai(
 			reportedBy: `IAAI ${iaaiData.location || ''}`
 		});
 	}
-	
+
 	// Return normalized record
 	return {
 		vin,

@@ -7,10 +7,10 @@ import { sql } from 'drizzle-orm';
 /**
  * GET /api/health
  * Health check endpoint for monitoring
- * 
+ *
  * Verifies database and queue connectivity
  * Returns system version and build timestamp
- * 
+ *
  * Requirements: 93.1-93.5
  */
 export const GET: RequestHandler = async () => {
@@ -24,7 +24,7 @@ export const GET: RequestHandler = async () => {
 	} catch (error) {
 		checks.database = {
 			status: 'error',
-			message: error instanceof Error ? error.message : 'Unknown error',
+			message: error instanceof Error ? error.message : 'Unknown error'
 		};
 		overallStatus = 'degraded';
 	}
@@ -42,7 +42,7 @@ export const GET: RequestHandler = async () => {
 	} catch (error) {
 		checks.queue = {
 			status: 'error',
-			message: error instanceof Error ? error.message : 'Unknown error',
+			message: error instanceof Error ? error.message : 'Unknown error'
 		};
 		overallStatus = 'degraded';
 	}
@@ -55,10 +55,10 @@ export const GET: RequestHandler = async () => {
 			service: 'vehicle-history-platform',
 			version: '2.0.0',
 			buildTimestamp: process.env.BUILD_TIMESTAMP || new Date().toISOString(),
-			checks,
+			checks
 		},
 		{
-			status: overallStatus === 'ok' ? 200 : 503,
+			status: overallStatus === 'ok' ? 200 : 503
 		}
 	);
 };

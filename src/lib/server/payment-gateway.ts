@@ -38,7 +38,9 @@ export async function initiatePayment(
 
 	if (!response.ok) {
 		const errorData = await response.json().catch(() => ({}));
-		throw new Error(`Paystack API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
+		throw new Error(
+			`Paystack API error: ${response.status} - ${errorData.message || 'Unknown error'}`
+		);
 	}
 
 	const data = await response.json();

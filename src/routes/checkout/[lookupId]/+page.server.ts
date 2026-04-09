@@ -38,14 +38,18 @@ export const load: PageServerLoad = async ({ params }) => {
 		model: safeGet(isNewStructure ? decoded.identification?.model : decoded.model, 'Unknown'),
 		year: safeGet(isNewStructure ? decoded.identification?.modelYear : decoded.year, 'Unknown'),
 		engine: safeGet(
-			isNewStructure 
-				? (decoded.engine?.model || decoded.engine?.configuration) 
-				: decoded.engine,
+			isNewStructure ? decoded.engine?.model || decoded.engine?.configuration : decoded.engine,
 			'Unknown'
 		),
 		bodyClass: safeGet(isNewStructure ? decoded.body?.bodyClass : decoded.bodyClass, 'Unknown'),
-		plantCountry: safeGet(isNewStructure ? decoded.manufacturing?.plantCountry : decoded.plantCountry, 'Unknown'),
-		fuelType: safeGet(isNewStructure ? decoded.engine?.fuelTypePrimary : decoded.fuelType, 'Unknown'),
+		plantCountry: safeGet(
+			isNewStructure ? decoded.manufacturing?.plantCountry : decoded.plantCountry,
+			'Unknown'
+		),
+		fuelType: safeGet(
+			isNewStructure ? decoded.engine?.fuelTypePrimary : decoded.fuelType,
+			'Unknown'
+		),
 		cifUsd: parseFloat(data.ncsValuationUsd) || 0,
 		confidence: data.valuationConfidence || 'unknown',
 		totalDuty: duty?.totalDutyNgn || 0,

@@ -7,12 +7,12 @@ export interface VINValidationResult {
 
 /**
  * Validates a VIN (Vehicle Identification Number)
- * 
+ *
  * Rules:
  * - Must be exactly 17 characters
  * - Must be alphanumeric
  * - Cannot contain I, O, or Q (to avoid confusion with 1, 0)
- * 
+ *
  * @param vin - The VIN to validate
  * @returns Validation result with error message if invalid
  */
@@ -38,7 +38,7 @@ export function validateVIN(vin: string): VINValidationResult {
 
 /**
  * Normalizes a VIN by converting to uppercase and trimming whitespace
- * 
+ *
  * @param vin - The VIN to normalize
  * @returns Normalized VIN
  */

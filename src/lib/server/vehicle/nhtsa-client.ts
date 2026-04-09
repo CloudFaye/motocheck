@@ -47,7 +47,7 @@ export async function decodeVIN(vin: string): Promise<Map<string, string>> {
 	}
 
 	const data: NHTSAResponse = await response.json();
-	
+
 	// Convert to Map for easy lookup
 	const resultMap = new Map<string, string>();
 	data.Results.forEach((result) => {
@@ -75,11 +75,11 @@ export async function getRecalls(vin: string): Promise<RecallResult[]> {
 	try {
 		const url = `${config.NHTSA_API_URL}/Recalls/GetRecallsByVIN/${vin}?format=json`;
 		const response = await fetchWithRetry(url);
-		
+
 		if (!response.ok) {
 			return [];
 		}
-		
+
 		const data = await response.json();
 		return data.Results || [];
 	} catch (error) {

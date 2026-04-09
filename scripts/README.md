@@ -29,6 +29,7 @@ pnpm test:vin 1HGBH41JXMN109186
 ### Output
 
 The script provides color-coded output:
+
 - 🟢 Green: Completed stages and success messages
 - 🟡 Yellow: In-progress stages and warnings
 - 🔴 Red: Failed stages and errors
@@ -56,28 +57,34 @@ The script will wait up to 10 minutes for report completion. If generation takes
 ## Sample VINs for Testing
 
 ### Clean History VIN
+
 - No accidents, no title brands, normal mileage
 - Example: `1HGBH41JXMN109186` (Honda Accord)
 
 ### Salvage Title VIN
+
 - Auction history, damage records, title brands
 - Look for VINs with Copart/IAAI auction history
 
 ### High Mileage VIN
+
 - Tests odometer anomaly detection
 - Look for vehicles with 200,000+ miles
 
 ### Gap History VIN
+
 - Tests gap detection (18+ month periods with no events)
 - Look for older vehicles with sparse title transfer history
 
 ### Recall VIN
+
 - Tests recall detection and reporting
 - Check NHTSA recall database for affected VINs
 
 ## Development
 
 The script is written in TypeScript and uses:
+
 - `tsx` for TypeScript execution
 - `dotenv` for environment variable loading
 - Native `fetch` for API calls

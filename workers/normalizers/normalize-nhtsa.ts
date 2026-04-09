@@ -1,24 +1,23 @@
 /**
  * NHTSA Normalizers
- * 
+ *
  * Wraps existing NHTSA mapper logic to transform NHTSA API responses
  * into the unified NormalizedVehicleRecord schema.
- * 
+ *
  * Requirements: 11.2, 11.5, 33.1, 33.2, 39.1-39.5, 43.1-43.5
  */
 
-import type { 
-	NormalizedVehicleRecord, 
+import type {
+	NormalizedVehicleRecord,
 	VehicleIdentity,
 	VehicleEvent,
 	RecallRecord
 } from '../../src/lib/shared/types.js';
-import type { ComprehensiveVehicleData } from '../../src/lib/server/vehicle/types.js';
 
 /**
  * Normalize NHTSA decode data
  * Wraps existing NHTSA mapper logic without rewriting
- * 
+ *
  * Requirements: 11.2, 33.1, 33.2, 39.1-39.5
  */
 export async function normalizeNhtsaDecode(
@@ -29,17 +28,17 @@ export async function normalizeNhtsaDecode(
 ): Promise<NormalizedVehicleRecord> {
 	// The raw data is the NHTSA API response format: { Results: [...] }
 	const nhtsaResponse = rawJson as { Results?: Array<{ Variable: string; Value: string | null }> };
-	
+
 	if (!nhtsaResponse.Results || !Array.isArray(nhtsaResponse.Results)) {
 		throw new Error('Invalid NHTSA decode response format');
 	}
-	
+
 	// Helper to extract value by variable name
 	const getValue = (variableName: string): string | undefined => {
-		const result = nhtsaResponse.Results?.find(r => r.Variable === variableName);
+		const result = nhtsaResponse.Results?.find((r) => r.Variable === variableName);
 		return result?.Value || undefined;
 	};
-	
+
 	// Extract vehicle identity fields from NHTSA Results array
 	const identity: VehicleIdentity = {
 		year: parseInt(getValue('Model Year') || '0') || 0,
@@ -47,15 +46,17 @@ export async function normalizeNhtsaDecode(
 		model: getValue('Model') || '',
 		trim: getValue('Trim') || undefined,
 		bodyStyle: getValue('Body Class') || undefined,
-		engineDescription: getValue('Engine Model') || 
-			`${getValue('Displacement (L)') || ''} ${getValue('Engine Configuration') || ''}`.trim() || undefined,
+		engineDescription:
+			getValue('Engine Model') ||
+			`${getValue('Displacement (L)') || ''} ${getValue('Engine Configuration') || ''}`.trim() ||
+			undefined,
 		driveType: getValue('Drive Type') || undefined,
 		fuelType: getValue('Fuel Type - Primary') || undefined
 	};
-	
+
 	// NHTSA decode doesn't produce events, just vehicle identity
 	const events: VehicleEvent[] = [];
-	
+
 	// Return normalized record
 	return {
 		vin,
@@ -73,7 +74,7 @@ export async function normalizeNhtsaDecode(
 /**
  * Normalize NHTSA recalls data
  * Extracts recalls and creates recall events for timeline
- * 
+ *
  * Requirements: 11.5, 43.1-43.5
  */
 export async function normalizeNhtsaRecalls(
@@ -83,17 +84,23 @@ export async function normalizeNhtsaRecalls(
 	_rawHtml: string | null
 ): Promise<NormalizedVehicleRecord> {
 	// The raw data is the NHTSA recalls API response format
-	const nhtsaResponse = rawJson as { results?: Array<{
-		Component?: string;
-		Summary?: string;
-		Consequence?: string;
-		Remedy?: string;
-		ReportReceivedDate?: string;
-		NHTSACampaignNumber?: string;
-	}> };
-	
+	const nhtsaResponse = rawJson as {
+		results?: Array<{
+			Component?: string;
+			Summary?: string;
+			Consequence?: string;
+			Remedy?: string;
+			ReportReceivedDate?: string;
+			NHTSACampaignNumber?: string;
+		}>;
+	};
+
 	// Handle empty results (no recalls found)
-	if (!nhtsaResponse.results || !Array.isArray(nhtsaResponse.results) || nhtsaResponse.results.length === 0) {
+	if (
+		!nhtsaResponse.results ||
+		!Array.isArray(nhtsaResponse.results) ||
+		nhtsaResponse.results.length === 0
+	) {
 		return {
 			vin,
 			source: 'nhtsa_recalls',
@@ -106,9 +113,9 @@ export async function normalizeNhtsaRecalls(
 			damageRecords: undefined
 		};
 	}
-	
+
 	// Extract recalls
-	const recalls: RecallRecord[] = nhtsaResponse.results.map(recall => ({
+	const recalls: RecallRecord[] = nhtsaResponse.results.map((recall) => ({
 		component: recall.Component || 'Unknown',
 		summary: recall.Summary || '',
 		consequence: recall.Consequence || '',
@@ -116,9 +123,9 @@ export async function normalizeNhtsaRecalls(
 		reportReceivedDate: recall.ReportReceivedDate || '',
 		nhtsaCampaignNumber: recall.NHTSACampaignNumber || ''
 	}));
-	
+
 	// Create recall events for timeline
-	const events: VehicleEvent[] = recalls.map(recall => ({
+	const events: VehicleEvent[] = recalls.map((recall) => ({
 		type: 'recall' as const,
 		date: recall.reportReceivedDate,
 		description: `Recall issued for ${recall.component}: ${recall.summary}`,
@@ -131,7 +138,7 @@ export async function normalizeNhtsaRecalls(
 			campaignNumber: recall.nhtsaCampaignNumber
 		}
 	}));
-	
+
 	// Return normalized record
 	return {
 		vin,

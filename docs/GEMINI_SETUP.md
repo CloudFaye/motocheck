@@ -55,11 +55,13 @@ After deployment, check the worker logs for:
 ## Free Tier Limits
 
 ### Daily Limits
+
 - **Requests**: 1,500 per day
 - **Tokens**: 1,000,000 per day
 - **Rate**: 15 requests per minute
 
 ### What This Means
+
 - Each vehicle report uses approximately 10-15 requests (1 analysis + 9 sections)
 - You can generate **100-150 reports per day** on the free tier
 - Perfect for testing and small-scale production use
@@ -91,16 +93,19 @@ If you prefer to use Claude instead:
 ### Gemini Models
 
 **gemini-2.5-flash** (default, recommended)
+
 - Fastest responses
 - Best for production use
 - Free tier: 15 RPM, 1M tokens/day
 
 **gemini-1.5-pro**
+
 - Higher quality analysis
 - Slower responses
 - Free tier: 2 RPM, 50 requests/day
 
 To change model:
+
 ```
 GEMINI_MODEL=gemini-1.5-pro
 ```
@@ -108,6 +113,7 @@ GEMINI_MODEL=gemini-1.5-pro
 ### Anthropic Models
 
 **claude-sonnet-4-20250514** (default)
+
 - High quality analysis
 - Paid only ($3/$15 per 1M tokens)
 
@@ -116,6 +122,7 @@ GEMINI_MODEL=gemini-1.5-pro
 ### "API key not configured" Error
 
 Check that:
+
 1. `GEMINI_API_KEY` is set in Railway environment variables
 2. `LLM_PROVIDER` is set to `gemini`
 3. Both web app and worker services have the variables
@@ -124,6 +131,7 @@ Check that:
 ### "Rate limit exceeded" Error
 
 You've hit the free tier limits:
+
 - Wait for the rate limit to reset (1 minute for RPM, 24 hours for daily)
 - Upgrade to paid tier for higher limits
 - Reduce concurrent worker instances
@@ -137,17 +145,20 @@ You've hit the free tier limits:
 ## Best Practices
 
 ### For Development
+
 - Use `gemini-2.5-flash` for fast iteration
 - Monitor usage in Google AI Studio dashboard
 - Test with a few VINs before bulk processing
 
 ### For Production
+
 - Start with free tier to validate
 - Monitor daily usage patterns
 - Upgrade to paid when approaching limits
 - Consider caching report results to reduce API calls
 
 ### Cost Optimization
+
 - Cache completed reports (already implemented)
 - Don't regenerate reports unnecessarily
 - Use `gemini-2.5-flash` instead of `pro` for most cases
@@ -156,10 +167,12 @@ You've hit the free tier limits:
 ## Support
 
 ### Google AI Studio
+
 - Documentation: https://ai.google.dev/docs
 - Community: https://discuss.ai.google.dev/
 
 ### Application Issues
+
 - Check worker logs for detailed error messages
 - Verify environment variables are set correctly
 - Test with a single VIN first
@@ -167,27 +180,29 @@ You've hit the free tier limits:
 ## Security
 
 ### API Key Protection
+
 - Never commit API keys to git
 - Use Railway's environment variable management
 - Rotate keys regularly
 - Restrict API key usage in Google Cloud Console if needed
 
 ### Rate Limiting
+
 - The application handles rate limits automatically
 - Failed requests are retried with exponential backoff
 - Monitor logs for rate limit warnings
 
 ## Comparison: Gemini vs Anthropic
 
-| Feature | Gemini (Free) | Anthropic (Paid) |
-|---------|---------------|------------------|
-| Cost | Free | $3-15 per 1M tokens |
-| Daily Limit | 1,500 requests | No limit |
-| Rate Limit | 15 RPM | 50 RPM |
-| Quality | Excellent | Excellent |
-| Speed | Fast | Fast |
-| JSON Support | Native | Native |
-| Best For | Testing, small-scale | Production, high-volume |
+| Feature      | Gemini (Free)        | Anthropic (Paid)        |
+| ------------ | -------------------- | ----------------------- |
+| Cost         | Free                 | $3-15 per 1M tokens     |
+| Daily Limit  | 1,500 requests       | No limit                |
+| Rate Limit   | 15 RPM               | 50 RPM                  |
+| Quality      | Excellent            | Excellent               |
+| Speed        | Fast                 | Fast                    |
+| JSON Support | Native               | Native                  |
+| Best For     | Testing, small-scale | Production, high-volume |
 
 ## Conclusion
 

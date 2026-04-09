@@ -10,12 +10,12 @@ import type { RequestHandler } from '@sveltejs/kit';
 export const POST: RequestHandler = async ({ request }) => {
 	const signature = request.headers.get('x-paystack-signature') || '';
 	const rawBody = await request.text();
-	
+
 	console.log('📥 Webhook received:', {
 		hasSignature: !!signature,
 		bodyLength: rawBody.length
 	});
-	
+
 	let payload;
 	try {
 		payload = JSON.parse(rawBody);
@@ -37,7 +37,11 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	try {
 		// Find order
-		const order = await db.select().from(orders).where(eq(orders.paymentRef, result.txRef!)).limit(1);
+		const order = await db
+			.select()
+			.from(orders)
+			.where(eq(orders.paymentRef, result.txRef!))
+			.limit(1);
 
 		if (order.length === 0) {
 			console.log('⚠️ Order not found for reference:', result.txRef);
@@ -49,7 +53,10 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Check amount
 		if (Number(orderRecord.amountNgn) !== result.amount) {
-			console.log('⚠️ Amount mismatch:', { expected: orderRecord.amountNgn, received: result.amount });
+			console.log('⚠️ Amount mismatch:', {
+				expected: orderRecord.amountNgn,
+				received: result.amount
+			});
 			return json({ status: 'received' });
 		}
 
@@ -90,7 +97,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			queue.send(Jobs.FETCH_NHTSA_DECODE, { vin }),
 			queue.send(Jobs.FETCH_NHTSA_RECALLS, { vin }),
 			queue.send(Jobs.FETCH_NMVTIS, { vin }),
-			queue.send(Jobs.FETCH_NICB, { vin }),
+			queue.send(Jobs.FETCH_NICB, { vin })
 		];
 
 		// Enqueue all scraper jobs in parallel
@@ -100,7 +107,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			queue.send(Jobs.SCRAPE_AUTOTRADER, { vin }),
 			queue.send(Jobs.SCRAPE_CARGURUS, { vin }),
 			queue.send(Jobs.SCRAPE_JDPOWER, { vin }),
-			queue.send(Jobs.SCRAPE_VININSPECT, { vin }),
+			queue.send(Jobs.SCRAPE_VININSPECT, { vin })
 		];
 
 		try {
@@ -122,7 +129,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						'scrape-autotrader',
 						'scrape-cargurus',
 						'scrape-jdpower',
-						'scrape-vininspect',
+						'scrape-vininspect'
 					];
 					console.error(`✗ Failed to enqueue ${jobNames[index]}:`, result.reason);
 				}

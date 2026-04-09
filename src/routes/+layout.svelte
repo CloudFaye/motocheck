@@ -1,5 +1,6 @@
 <script lang="ts">
 	import './layout.css';
+	import { resolve } from '$app/paths';
 	import favicon from '$lib/assets/favicon.svg';
 	import { Toaster } from '$lib/components/ui/sonner';
 
@@ -7,10 +8,16 @@
 	let mobileOpen = $state(false);
 
 	const navLinks = [
-		{ href: '/sample-report', label: 'Sample Report' },
-		{ href: '/#how-it-works', label: 'How It Works' },
-		{ href: '/#faq', label: 'FAQ' },
-	];
+		{ path: '/sample-report', label: 'Sample Report' },
+		{ path: '/#how-it-works', label: 'How It Works' },
+		{ path: '/#faq', label: 'FAQ' }
+	] as const;
+	const productLinks = [
+		{ path: '/#vin-form', label: 'Check a VIN' },
+		{ path: '/sample-report', label: 'Sample Report' },
+		{ path: '/#how-it-works', label: 'How It Works' },
+		{ path: '/#pricing', label: 'Pricing' }
+	] as const;
 </script>
 
 <svelte:head>
@@ -20,15 +27,13 @@
 <Toaster position="top-center" />
 
 <!-- ════════════════════════ NAV ════════════════════════ -->
-<header
-	class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm "
->
+<header class="fixed top-0 right-0 left-0 z-50 bg-white/90 backdrop-blur-sm">
 	<div class="container-wide">
-		<nav class="h-16 flex items-center justify-between gap-6">
+		<nav class="flex h-16 items-center justify-between gap-6">
 			<!-- Logo -->
-			<a href="/" class="flex items-center gap-2.5 flex-shrink-0 group">
+			<a href={resolve('/')} class="group flex flex-shrink-0 items-center gap-2.5">
 				<div
-					class="w-8 h-8 rounded-lg bg-ink flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
+					class="flex h-8 w-8 items-center justify-center rounded-lg bg-ink transition-transform duration-200 group-hover:scale-105"
 				>
 					<!-- Minimal car icon mark -->
 					<svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="text-white">
@@ -52,14 +57,14 @@
 						<circle cx="11" cy="13.5" r="1" fill="currentColor" />
 					</svg>
 				</div>
-				<span class="font-sans font-semibold text-ink text-sm tracking-tight">MotoCheck</span>
+				<span class="font-sans text-sm font-semibold tracking-tight text-ink">MotoCheck</span>
 			</a>
 
 			<!-- Desktop links -->
-			<ul class="hidden md:flex items-center gap-7">
-				{#each navLinks as link}
+			<ul class="hidden items-center gap-7 md:flex">
+				{#each navLinks as link (link.path)}
 					<li>
-						<a href={link.href} class="nav-link pb-px">
+						<a href={resolve(link.path)} class="nav-link pb-px">
 							{link.label}
 						</a>
 					</li>
@@ -67,8 +72,8 @@
 			</ul>
 
 			<!-- CTA -->
-			<div class="hidden md:flex items-center gap-3">
-				<a href="/#vin-form" class="btn-gold text-xs px-5 py-2.5">
+			<div class="hidden items-center gap-3 md:flex">
+				<a href={resolve('/#vin-form')} class="btn-gold px-5 py-2.5 text-xs">
 					Check VIN
 					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
 						<path
@@ -84,7 +89,7 @@
 
 			<!-- Mobile hamburger -->
 			<button
-				class="md:hidden p-2 rounded-lg hover:bg-surface-subtle transition-colors"
+				class="rounded-lg p-2 transition-colors hover:bg-surface-subtle md:hidden"
 				onclick={() => (mobileOpen = !mobileOpen)}
 				aria-label="Toggle menu"
 			>
@@ -113,20 +118,20 @@
 
 	<!-- Mobile menu -->
 	{#if mobileOpen}
-		<div class="md:hidden border-t border-surface-border bg-white animate-fade-in">
-			<div class="container-wide py-4 flex flex-col gap-1">
-				{#each navLinks as link}
+		<div class="animate-fade-in border-t border-surface-border bg-white md:hidden">
+			<div class="container-wide flex flex-col gap-1 py-4">
+				{#each navLinks as link (link.path)}
 					<a
-						href={link.href}
-						class="px-3 py-2.5 rounded-lg text-sm font-medium font-sans text-ink-soft hover:text-ink hover:bg-surface-subtle transition-all"
+						href={resolve(link.path)}
+						class="rounded-lg px-3 py-2.5 font-sans text-sm font-medium text-ink-soft transition-all hover:bg-surface-subtle hover:text-ink"
 						onclick={() => (mobileOpen = false)}
 					>
 						{link.label}
 					</a>
 				{/each}
-				<div class="pt-3 mt-2 border-t border-surface-border">
+				<div class="mt-2 border-t border-surface-border pt-3">
 					<a
-						href="/#vin-form"
+						href={resolve('/#vin-form')}
 						class="btn-gold w-full justify-center"
 						onclick={() => (mobileOpen = false)}
 					>
@@ -139,19 +144,19 @@
 </header>
 
 <!-- ═══════════════════ PAGE CONTENT ═══════════════════ -->
-<main class="pt-16 min-h-screen">
+<main class="min-h-screen pt-16">
 	{@render children()}
 </main>
 
 <!-- ════════════════════════ FOOTER ════════════════════════ -->
-<footer class="bg-surface-subtle border-t border-surface-border mt-auto">
+<footer class="mt-auto border-t border-surface-border bg-surface-subtle">
 	<!-- Main footer -->
 	<div class="container-wide py-16">
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
+		<div class="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
 			<!-- Brand column -->
 			<div class="lg:col-span-1">
-				<a href="/" class="flex items-center gap-2.5 mb-4">
-					<div class="w-8 h-8 rounded-lg bg-ink flex items-center justify-center">
+				<a href={resolve('/')} class="mb-4 flex items-center gap-2.5">
+					<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-ink">
 						<svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="text-white">
 							<path
 								d="M3 9.5L4.5 5.5h7L13 9.5"
@@ -173,9 +178,9 @@
 							<circle cx="11" cy="13.5" r="1" fill="currentColor" />
 						</svg>
 					</div>
-					<span class="font-sans font-semibold text-ink text-sm">MotoCheck</span>
+					<span class="font-sans text-sm font-semibold text-ink">MotoCheck</span>
 				</a>
-				<p class="text-sm text-ink-muted leading-relaxed max-w-xs mb-5">
+				<p class="mb-5 max-w-xs text-sm leading-relaxed text-ink-muted">
 					Nigeria's trusted platform for vehicle history reports and import duty calculations.
 				</p>
 				<!-- Trust marks -->
@@ -189,11 +194,11 @@
 			<div>
 				<h6 class="eyebrow mb-5">Product</h6>
 				<ul class="flex flex-col gap-3">
-					{#each [{ href: '/#vin-form', label: 'Check a VIN' }, { href: '/sample-report', label: 'Sample Report' }, { href: '/#how-it-works', label: 'How It Works' }, { href: '/#pricing', label: 'Pricing' }] as link}
+					{#each productLinks as link (link.path)}
 						<li>
 							<a
-								href={link.href}
-								class="text-sm text-ink-muted hover:text-ink transition-colors font-sans"
+								href={resolve(link.path)}
+								class="font-sans text-sm text-ink-muted transition-colors hover:text-ink"
 							>
 								{link.label}
 							</a>
@@ -206,16 +211,30 @@
 			<div>
 				<h6 class="eyebrow mb-5">Support</h6>
 				<ul class="flex flex-col gap-3">
-					{#each [{ href: '/#faq', label: 'FAQ' }, { href: '/contact', label: 'Contact Us' }, { href: '/privacy-policy', label: 'Privacy Policy' }, { href: '/terms', label: 'Terms of Service' }] as link}
-						<li>
-							<a
-								href={link.href}
-								class="text-sm text-ink-muted hover:text-ink transition-colors font-sans"
-							>
-								{link.label}
-							</a>
-						</li>
-					{/each}
+					<li>
+						<a
+							href={resolve('/#faq')}
+							class="font-sans text-sm text-ink-muted transition-colors hover:text-ink"
+						>
+							FAQ
+						</a>
+					</li>
+					<li>
+						<a
+							href="mailto:support@motocheck.ng"
+							class="font-sans text-sm text-ink-muted transition-colors hover:text-ink"
+						>
+							Email Support
+						</a>
+					</li>
+					<li>
+						<a
+							href={resolve('/sample-report')}
+							class="font-sans text-sm text-ink-muted transition-colors hover:text-ink"
+						>
+							View Sample Report
+						</a>
+					</li>
 				</ul>
 			</div>
 
@@ -224,11 +243,7 @@
 				<h6 class="eyebrow mb-5">Get in touch</h6>
 				<ul class="flex flex-col gap-3">
 					<li class="flex items-start gap-3">
-						<svg
-							class="w-4 h-4 text-gold-400 mt-0.5 flex-shrink-0"
-							viewBox="0 0 16 16"
-							fill="none"
-						>
+						<svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-gold-400" viewBox="0 0 16 16" fill="none">
 							<rect
 								x="2"
 								y="4"
@@ -247,17 +262,13 @@
 						</svg>
 						<a
 							href="mailto:support@motocheck.ng"
-							class="text-sm text-ink-muted hover:text-ink transition-colors"
+							class="text-sm text-ink-muted transition-colors hover:text-ink"
 						>
 							support@motocheck.ng
 						</a>
 					</li>
 					<li class="flex items-start gap-3">
-						<svg
-							class="w-4 h-4 text-gold-400 mt-0.5 flex-shrink-0"
-							viewBox="0 0 16 16"
-							fill="none"
-						>
+						<svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-gold-400" viewBox="0 0 16 16" fill="none">
 							<path
 								d="M13 10.5c-1 0-2-.5-2.5-1l-1.5 1.5C7 9.5 6.5 9 5 7l1.5-1.5C6 5 5.5 4 5.5 3H3C3 9.5 6.5 13 13 13v-2.5z"
 								stroke="currentColor"
@@ -268,11 +279,7 @@
 						<span class="text-sm text-ink-muted">+234 XXX XXX XXXX</span>
 					</li>
 					<li class="flex items-start gap-3">
-						<svg
-							class="w-4 h-4 text-gold-400 mt-0.5 flex-shrink-0"
-							viewBox="0 0 16 16"
-							fill="none"
-						>
+						<svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-gold-400" viewBox="0 0 16 16" fill="none">
 							<path
 								d="M8 2C5.8 2 4 3.8 4 6c0 3 4 8 4 8s4-5 4-8c0-2.2-1.8-4-4-4z"
 								stroke="currentColor"
@@ -289,20 +296,17 @@
 
 	<!-- Bottom bar -->
 	<div class="border-t border-surface-border">
-		<div
-			class="container-wide py-5 flex flex-col sm:flex-row items-center justify-between gap-3"
-		>
-			<p class="text-xs text-ink-faint font-sans">
+		<div class="container-wide flex flex-col items-center justify-between gap-3 py-5 sm:flex-row">
+			<p class="font-sans text-xs text-ink-faint">
 				© {new Date().getFullYear()} MotoCheck. All rights reserved.
 			</p>
-			<div class="flex items-center gap-1 text-xs text-ink-faint font-sans">
+			<div class="flex items-center gap-1 font-sans text-xs text-ink-faint">
 				<span>Payments secured by</span>
-				<span class="font-semibold text-ink-muted ml-1">Paystack</span>
+				<span class="ml-1 font-semibold text-ink-muted">Paystack</span>
 				<span class="mx-2 opacity-30">·</span>
 				<span>Data from</span>
-				<span class="font-semibold text-ink-muted ml-1">NHTSA & NCS</span>
+				<span class="ml-1 font-semibold text-ink-muted">NHTSA & NCS</span>
 			</div>
 		</div>
 	</div>
 </footer>
-

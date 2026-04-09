@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Toaster as Sonner, type ToasterProps as SonnerProps } from "svelte-sonner";
-	import { mode } from "mode-watcher";
+	import { Toaster as Sonner, type ToasterProps as SonnerProps } from 'svelte-sonner';
+	import { mode } from 'mode-watcher';
 	import { IconLoader } from '@tabler/icons-svelte';
 	import { IconCircleCheck } from '@tabler/icons-svelte';
 	import { IconAlertOctagon } from '@tabler/icons-svelte';
@@ -10,11 +10,7 @@
 	let { ...restProps }: SonnerProps = $props();
 </script>
 
-<Sonner
-	theme={mode.current}
-	class="toaster group"
-	{...restProps}
->
+<Sonner theme={mode.current} class="toaster group" {...restProps}>
 	{#snippet loadingIcon()}
 		<IconLoader class="size-4 animate-spin" />
 	{/snippet}

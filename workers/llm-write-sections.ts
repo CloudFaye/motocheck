@@ -1,6 +1,6 @@
 /**
  * LLM Section Writing Worker
- * 
+ *
  * Writes 9 report sections using LLM:
  * 1. Summary - 3-sentence buyer overview
  * 2. Ownership History - owner count and patterns
@@ -11,16 +11,16 @@
  * 7. Market Value - asking price fairness
  * 8. Gap Analysis - unexplained periods
  * 9. Buyers Checklist - 8 specific inspection items
- * 
+ *
  * Supports multiple LLM providers (Gemini, Anthropic) via unified service.
- * 
+ *
  * Requirements: 16.1-16.13, 67.1-67.5, 68.1-68.5, 69.1-69.5, 70.1-70.5, 71.1-71.5, 72.1-72.5, 73.1-73.5, 76.1-76.5, 79.1-79.5, 94.1-94.5
  */
 
 import { generateText, getLLMInfo } from '../src/lib/server/llm/index.js';
 import { db } from '../src/lib/server/db/index.js';
 import { pipelineReports, reportSections, pipelineLog } from '../src/lib/server/db/schema.js';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { Jobs } from '../src/lib/server/queue/job-names.js';
 import type { Timeline } from '../src/lib/shared/types.js';
 
@@ -35,14 +35,17 @@ interface SectionPrompt {
 const SECTION_PROMPTS: SectionPrompt[] = [
 	{
 		key: 'summary',
-		prompt: (timeline, llmFlags) => `You are writing the SUMMARY section of a vehicle history report.
+		prompt: (
+			timeline,
+			llmFlags
+		) => `You are writing the SUMMARY section of a vehicle history report.
 
 VEHICLE DATA:
 ${JSON.stringify({ identity: timeline.identity, riskScore: llmFlags?.riskScore, verdict: llmFlags?.verdict }, null, 2)}
 
 TIMELINE HIGHLIGHTS:
 - Total events: ${timeline.events.length}
-- Title brands: ${timeline.titleBrands.length > 0 ? timeline.titleBrands.map(b => b.brand).join(', ') : 'None'}
+- Title brands: ${timeline.titleBrands.length > 0 ? timeline.titleBrands.map((b) => b.brand).join(', ') : 'None'}
 - Damage records: ${timeline.damageRecords.length}
 - Recalls: ${timeline.recalls.length}
 - History gaps: ${timeline.gaps.length}
@@ -53,11 +56,13 @@ Write a 3-sentence summary that:
 3. Avoids jargon (Requirement 76.4)
 4. Provides a clear buy/caution/avoid verdict (Requirement 76.5)
 
-Return ONLY the summary text, no additional formatting.`,
+Return ONLY the summary text, no additional formatting.`
 	},
 	{
 		key: 'ownership_history',
-		prompt: (timeline) => `You are writing the OWNERSHIP HISTORY section of a vehicle history report.
+		prompt: (
+			timeline
+		) => `You are writing the OWNERSHIP HISTORY section of a vehicle history report.
 
 TITLE HISTORY:
 ${JSON.stringify(timeline.titleHistory, null, 2)}
@@ -71,11 +76,13 @@ Write 2-3 paragraphs explaining:
 4. Any ownership changes shortly after accidents (Requirement 73.4)
 5. What normal ownership duration looks like (Requirement 73.5)
 
-Use plain English and specific dates. Return ONLY the section text.`,
+Use plain English and specific dates. Return ONLY the section text.`
 	},
 	{
 		key: 'accident_analysis',
-		prompt: (timeline) => `You are writing the ACCIDENT ANALYSIS section of a vehicle history report.
+		prompt: (
+			timeline
+		) => `You are writing the ACCIDENT ANALYSIS section of a vehicle history report.
 
 DAMAGE RECORDS:
 ${JSON.stringify(timeline.damageRecords, null, 2)}
@@ -87,11 +94,14 @@ Write 2-3 paragraphs explaining:
 4. Estimate repair costs when data is available (Requirement 68.4)
 5. Explain how accident history affects resale value (Requirement 68.5)
 
-If no accidents, state that clearly. Use plain English and specific dates. Return ONLY the section text.`,
+If no accidents, state that clearly. Use plain English and specific dates. Return ONLY the section text.`
 	},
 	{
 		key: 'odometer_analysis',
-		prompt: (timeline, llmFlags) => `You are writing the ODOMETER ANALYSIS section of a vehicle history report.
+		prompt: (
+			timeline,
+			llmFlags
+		) => `You are writing the ODOMETER ANALYSIS section of a vehicle history report.
 
 ODOMETER READINGS:
 ${JSON.stringify(timeline.odometerReadings, null, 2)}
@@ -109,11 +119,14 @@ Write 2-3 paragraphs explaining:
 4. Any rollbacks or anomalies detected
 5. Comparison of actual vs expected mileage
 
-Use plain English and specific numbers. Return ONLY the section text.`,
+Use plain English and specific numbers. Return ONLY the section text.`
 	},
 	{
 		key: 'title_history',
-		prompt: (timeline, llmFlags) => `You are writing the TITLE HISTORY section of a vehicle history report.
+		prompt: (
+			timeline,
+			llmFlags
+		) => `You are writing the TITLE HISTORY section of a vehicle history report.
 
 TITLE BRANDS:
 ${JSON.stringify(timeline.titleBrands, null, 2)}
@@ -128,7 +141,7 @@ Write 2-3 paragraphs explaining:
 4. Distinguish between salvage and rebuilt titles (Requirement 72.4)
 5. Explain flood and lemon law titles when present (Requirement 72.5)
 
-If no title brands, state that the vehicle has a clean title. Use plain English. Return ONLY the section text.`,
+If no title brands, state that the vehicle has a clean title. Use plain English. Return ONLY the section text.`
 	},
 	{
 		key: 'recall_status',
@@ -144,7 +157,7 @@ Write 2-3 paragraphs explaining:
 4. Provide remedy information for open recalls (Requirement 71.4)
 5. Confirm when no recalls exist (Requirement 71.5)
 
-Use plain English and avoid technical jargon. Return ONLY the section text.`,
+Use plain English and avoid technical jargon. Return ONLY the section text.`
 	},
 	{
 		key: 'market_value',
@@ -155,7 +168,7 @@ ${JSON.stringify(timeline.marketValue, null, 2)}
 
 VEHICLE CONDITION FACTORS:
 - Damage records: ${timeline.damageRecords.length}
-- Title brands: ${timeline.titleBrands.length > 0 ? timeline.titleBrands.map(b => b.brand).join(', ') : 'None'}
+- Title brands: ${timeline.titleBrands.length > 0 ? timeline.titleBrands.map((b) => b.brand).join(', ') : 'None'}
 - Current mileage: ${timeline.odometerReadings[timeline.odometerReadings.length - 1]?.mileage || 'Unknown'}
 
 Write 2-3 paragraphs explaining:
@@ -165,11 +178,14 @@ Write 2-3 paragraphs explaining:
 4. Explain how mileage affects value (Requirement 70.4)
 5. Provide a clear buy/caution/avoid recommendation (Requirement 70.5)
 
-Use plain English and specific numbers. Return ONLY the section text.`,
+Use plain English and specific numbers. Return ONLY the section text.`
 	},
 	{
 		key: 'gap_analysis',
-		prompt: (timeline, llmFlags) => `You are writing the GAP ANALYSIS section of a vehicle history report.
+		prompt: (
+			timeline,
+			llmFlags
+		) => `You are writing the GAP ANALYSIS section of a vehicle history report.
 
 HISTORY GAPS:
 ${JSON.stringify(timeline.gaps, null, 2)}
@@ -186,7 +202,7 @@ Write 2-3 paragraphs explaining:
 4. Distinguish between normal gaps (storage, private ownership) and concerning gaps (Requirement 67.4)
 5. Rate buyer concern level from 1 to 10 for each gap (Requirement 67.5)
 
-If no gaps, state that the vehicle has continuous history. Use plain English. Return ONLY the section text.`,
+If no gaps, state that the vehicle has continuous history. Use plain English. Return ONLY the section text.`
 	},
 	{
 		key: 'buyers_checklist',
@@ -196,7 +212,7 @@ VEHICLE HISTORY SUMMARY:
 - Damage records: ${JSON.stringify(timeline.damageRecords, null, 2)}
 - Title brands: ${JSON.stringify(timeline.titleBrands, null, 2)}
 - Recalls: ${JSON.stringify(timeline.recalls, null, 2)}
-- Odometer anomalies: ${timeline.odometerReadings.filter(r => r.isAnomaly).length}
+- Odometer anomalies: ${timeline.odometerReadings.filter((r) => r.isAnomaly).length}
 
 Generate a maximum of 8 specific inspection items (Requirement 69.1) that:
 1. Are based on the vehicle's specific history (Requirement 69.2)
@@ -204,9 +220,146 @@ Generate a maximum of 8 specific inspection items (Requirement 69.1) that:
 3. Reference specific damage areas from accident records (Requirement 69.4)
 4. Reference specific recall components if applicable (Requirement 69.5)
 
-Format as a numbered list. Be specific and actionable. Return ONLY the checklist.`,
-	},
+Format as a numbered list. Be specific and actionable. Return ONLY the checklist.`
+	}
 ];
+
+function formatMonthYear(date: string): string {
+	const parsed = new Date(date);
+	if (Number.isNaN(parsed.getTime())) {
+		return date;
+	}
+
+	return parsed.toLocaleDateString('en-US', {
+		year: 'numeric',
+		month: 'short'
+	});
+}
+
+function buildFallbackSections(
+	timeline: Timeline,
+	llmFlags: Record<string, unknown>,
+	reportVerdict?: string | null
+): Record<string, string> {
+	const riskScore = typeof llmFlags.riskScore === 'number' ? llmFlags.riskScore : null;
+	const verdict = reportVerdict || 'Verdict not available';
+	const titleBrands = timeline.titleBrands.map((brand) => brand.brand);
+	const latestMileage = timeline.odometerReadings[timeline.odometerReadings.length - 1];
+	const anomalyCount = timeline.odometerReadings.filter((reading) => reading.isAnomaly).length;
+	const ownershipStates = [...new Set(timeline.titleHistory.map((entry) => entry.state))];
+	const checklist: string[] = [];
+
+	if (timeline.damageRecords[0]) {
+		checklist.push(
+			`Inspect repaired areas around ${timeline.damageRecords[0].primaryDamage.toLowerCase()} damage and confirm panel alignment and paint consistency.`
+		);
+	}
+	if (titleBrands.length > 0) {
+		checklist.push(
+			'Confirm title branding history with DMV or seller paperwork before committing to purchase.'
+		);
+	}
+	if (anomalyCount > 0) {
+		checklist.push(
+			'Verify mileage with service invoices, inspection stickers, and title documents.'
+		);
+	}
+	if (timeline.recalls.length > 0) {
+		checklist.push('Check recall completion with a franchised dealer using the VIN.');
+	}
+	if (timeline.gaps.length > 0) {
+		checklist.push(
+			'Ask the seller to explain the longest history gap and provide supporting records.'
+		);
+	}
+	if (timeline.marketValue.askingPrice && timeline.marketValue.marketAverage) {
+		checklist.push(
+			'Compare the asking price against local market comps after adjusting for title and damage history.'
+		);
+	}
+	if (latestMileage) {
+		checklist.push(
+			`Road-test the vehicle and inspect wear items that should match roughly ${latestMileage.mileage.toLocaleString()} recorded miles.`
+		);
+	}
+	if (ownershipStates.length > 0) {
+		checklist.push(
+			`Review registration and title documents across ${ownershipStates.join(', ')} for continuity.`
+		);
+	}
+
+	while (checklist.length < 5) {
+		checklist.push('Get an independent pre-purchase inspection before payment or shipment.');
+	}
+
+	return {
+		summary: `This ${timeline.identity.year} ${timeline.identity.make} ${timeline.identity.model} has ${timeline.events.length} recorded history event${timeline.events.length === 1 ? '' : 's'} across ${timeline.sourcesCovered.length} source${timeline.sourcesCovered.length === 1 ? '' : 's'}. ${verdict}${riskScore ? ` with a risk score of ${riskScore}/10.` : '.'} ${timeline.damageRecords.length > 0 ? `Damage history is present in ${timeline.damageRecords.length} record${timeline.damageRecords.length === 1 ? '' : 's'}, so condition verification matters.` : 'No damage history was captured from the sources that responded.'}`,
+		ownership_history:
+			timeline.titleHistory.length === 0
+				? 'No title transfer history was available in the stitched sources, so ownership count cannot be confirmed from this report alone.'
+				: `The report includes ${timeline.titleHistory.length} title transfer record${timeline.titleHistory.length === 1 ? '' : 's'} spanning ${ownershipStates.join(', ')}. The first recorded transfer is ${formatMonthYear(timeline.titleHistory[0].date)} and the most recent is ${formatMonthYear(timeline.titleHistory[timeline.titleHistory.length - 1].date)}. Short ownership periods or rapid state changes should be discussed with the seller.`,
+		accident_analysis:
+			timeline.damageRecords.length === 0
+				? 'No auction or damage records were captured from the stitched sources, which is encouraging but not definitive proof of an accident-free history.'
+				: `The timeline includes ${timeline.damageRecords.length} damage record${timeline.damageRecords.length === 1 ? '' : 's'}. The most recent recorded damage is ${timeline.damageRecords[0].primaryDamage} in ${timeline.damageRecords[0].location} on ${formatMonthYear(timeline.damageRecords[0].date)}. Any prior damage should be checked for repair quality, structural alignment, and airbag system integrity.`,
+		odometer_analysis:
+			timeline.odometerReadings.length === 0
+				? 'There were not enough mileage readings to establish a reliable odometer pattern, so supporting service records are especially important.'
+				: `${anomalyCount > 0 ? `The mileage history contains ${anomalyCount} anomaly flag${anomalyCount === 1 ? '' : 's'}, which is a meaningful buyer risk.` : 'The mileage readings trend in the expected direction without a flagged rollback.'} The latest captured reading is ${latestMileage?.mileage.toLocaleString() ?? 'unknown'} miles from ${formatMonthYear(latestMileage?.date ?? '')}. Compare the odometer with service and title paperwork before purchase.`,
+		title_history:
+			titleBrands.length === 0
+				? 'No title brands were present in the stitched data. That is a positive signal, but it should still be verified against DMV or commercial title-history sources when available.'
+				: `Title brands found: ${titleBrands.join(', ')}. Branded titles can affect financing, insurance, resale value, and the confidence you should place in the vehicle’s repair history.`,
+		recall_status:
+			timeline.recalls.length === 0
+				? 'No recall campaigns were returned for this VIN from the stitched sources.'
+				: `The report includes ${timeline.recalls.length} recall record${timeline.recalls.length === 1 ? '' : 's'}. Review open campaigns with a dealer and confirm whether remedies have already been completed before purchase or import.`,
+		market_value:
+			timeline.marketValue.askingPrice || timeline.marketValue.marketAverage
+				? `Captured market signals show an asking price of ${timeline.marketValue.askingPrice ? `$${timeline.marketValue.askingPrice.toLocaleString()}` : 'unknown'} and a market average of ${timeline.marketValue.marketAverage ? `$${timeline.marketValue.marketAverage.toLocaleString()}` : 'unknown'}. Price should be judged alongside mileage, title history, and any damage or recall exposure.`
+				: 'No reliable market pricing data was captured from the stitched sources, so manual comparison shopping is still necessary.',
+		gap_analysis:
+			timeline.gaps.length === 0
+				? 'No major history gaps were detected in the events that were captured.'
+				: `The report found ${timeline.gaps.length} history gap${timeline.gaps.length === 1 ? '' : 's'}. The longest gap spans ${Math.max(...timeline.gaps.map((gap) => gap.durationMonths))} months, which should be explained with maintenance, storage, or registration records.`,
+		buyers_checklist: checklist
+			.slice(0, 8)
+			.map((item, index) => `${index + 1}. ${item}`)
+			.join('\n')
+	};
+}
+
+async function upsertReportSection(
+	vin: string,
+	sectionKey: string,
+	content: string,
+	modelUsed: string
+) {
+	const existing = await db
+		.select({ id: reportSections.id })
+		.from(reportSections)
+		.where(and(eq(reportSections.vin, vin), eq(reportSections.sectionKey, sectionKey)))
+		.limit(1);
+
+	if (existing.length > 0) {
+		await db
+			.update(reportSections)
+			.set({
+				content,
+				modelUsed,
+				generatedAt: new Date()
+			})
+			.where(eq(reportSections.id, existing[0].id));
+		return;
+	}
+
+	await db.insert(reportSections).values({
+		vin,
+		sectionKey,
+		content,
+		modelUsed
+	});
+}
 
 /**
  * Call LLM API to generate ALL sections at once (single request)
@@ -215,25 +368,29 @@ async function generateAllSections(
 	timeline: Timeline,
 	llmFlags: Record<string, unknown>,
 	timeoutMs: number = 120000
-): Promise<Record<string, string>> {
+): Promise<{ content: Record<string, string>; model: string; provider: string }> {
 	const combinedPrompt = `You are writing a complete vehicle history report. Generate ALL 9 sections in a single JSON response.
 
 VEHICLE DATA:
-${JSON.stringify({ 
-	identity: timeline.identity, 
-	riskScore: llmFlags?.riskScore, 
-	verdict: llmFlags?.verdict,
-	titleBrands: timeline.titleBrands,
-	damageRecords: timeline.damageRecords,
-	recalls: timeline.recalls,
-	gaps: timeline.gaps,
-	odometerReadings: timeline.odometerReadings,
-	titleHistory: timeline.titleHistory,
-	marketValue: timeline.marketValue,
-	odometerAssessment: llmFlags?.odometerAssessment,
-	titleAssessment: llmFlags?.titleAssessment,
-	gapAnalysis: llmFlags?.gapAnalysis
-}, null, 2)}
+${JSON.stringify(
+	{
+		identity: timeline.identity,
+		riskScore: llmFlags?.riskScore,
+		verdict: llmFlags?.verdict,
+		titleBrands: timeline.titleBrands,
+		damageRecords: timeline.damageRecords,
+		recalls: timeline.recalls,
+		gaps: timeline.gaps,
+		odometerReadings: timeline.odometerReadings,
+		titleHistory: timeline.titleHistory,
+		marketValue: timeline.marketValue,
+		odometerAssessment: llmFlags?.odometerAssessment,
+		titleAssessment: llmFlags?.titleAssessment,
+		gapAnalysis: llmFlags?.gapAnalysis
+	},
+	null,
+	2
+)}
 
 Generate a JSON object with these 9 sections (keep each section concise, 2-3 paragraphs max):
 
@@ -251,38 +408,39 @@ Generate a JSON object with these 9 sections (keep each section concise, 2-3 par
 
 Return ONLY valid JSON, no markdown formatting.`;
 
-	const response = await generateText(
-		[{ role: 'user', content: combinedPrompt }],
-		{
-			maxTokens: 4000, // Increased for all sections
-			temperature: 0.7,
-			timeout: timeoutMs,
-		}
-	);
+	const response = await generateText([{ role: 'user', content: combinedPrompt }], {
+		maxTokens: 4000, // Increased for all sections
+		temperature: 0.7,
+		timeout: timeoutMs
+	});
 
 	// Parse JSON response
 	let cleanedText = response.content.trim();
 	cleanedText = cleanedText.replace(/^```(?:json)?\s*\n?/i, '');
 	cleanedText = cleanedText.replace(/\n?```\s*$/, '');
-	
+
 	const sections = JSON.parse(cleanedText.trim());
-	
+
 	return {
 		content: sections,
 		model: response.model,
-		provider: response.provider,
+		provider: response.provider
 	};
 }
 
 /**
  * Log pipeline progress
  */
-async function logProgress(vin: string, status: 'started' | 'completed' | 'failed', message?: string) {
+async function logProgress(
+	vin: string,
+	status: 'started' | 'completed' | 'failed',
+	message?: string
+) {
 	await db.insert(pipelineLog).values({
 		vin,
 		stage: 'llm-write-sections',
 		status,
-		message,
+		message
 	});
 }
 
@@ -325,10 +483,32 @@ async function writeSections(job: { data: { vin: string } }): Promise<void> {
 
 		// Generate ALL sections in a single LLM call (reduces from 9 calls to 1)
 		console.log(`[llm-write-sections] Generating all sections in single request`);
-		
+
 		const llmInfo = getLLMInfo();
-		const response = await generateAllSections(timeline, llmFlags);
-		
+		let response: { content: Record<string, string>; model: string; provider: string };
+
+		if (!llmInfo.configured) {
+			response = {
+				content: buildFallbackSections(timeline, llmFlags, report.llmVerdict),
+				model: 'rules-v1',
+				provider: 'fallback'
+			};
+		} else {
+			try {
+				response = await generateAllSections(timeline, llmFlags);
+			} catch (error) {
+				console.warn(
+					`[llm-write-sections] LLM section generation failed for VIN ${vin}, using fallback sections:`,
+					error
+				);
+				response = {
+					content: buildFallbackSections(timeline, llmFlags, report.llmVerdict),
+					model: 'rules-v1',
+					provider: 'fallback'
+				};
+			}
+		}
+
 		const sections = response.content as Record<string, string>;
 		const sectionsGenerated: string[] = [];
 		const sectionsFailed: string[] = [];
@@ -337,30 +517,21 @@ async function writeSections(job: { data: { vin: string } }): Promise<void> {
 		for (const sectionDef of SECTION_PROMPTS) {
 			try {
 				const content = sections[sectionDef.key];
-				
+
 				if (!content || typeof content !== 'string') {
 					throw new Error(`Missing or invalid content for section: ${sectionDef.key}`);
 				}
 
-				await db.insert(reportSections).values({
-					vin,
-					sectionKey: sectionDef.key,
-					content: content,
-					modelUsed: response.model,
-				}).onConflictDoUpdate({
-					target: [reportSections.vin, reportSections.sectionKey],
-					set: {
-						content: content,
-						modelUsed: response.model,
-						generatedAt: new Date(),
-					},
-				});
+				await upsertReportSection(vin, sectionDef.key, content, response.model);
 
 				sectionsGenerated.push(sectionDef.key);
 				console.log(`[llm-write-sections] Section stored: ${sectionDef.key}`);
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-				console.error(`[llm-write-sections] Failed to store section ${sectionDef.key}:`, errorMessage);
+				console.error(
+					`[llm-write-sections] Failed to store section ${sectionDef.key}:`,
+					errorMessage
+				);
 				sectionsFailed.push(sectionDef.key);
 			}
 		}
@@ -373,7 +544,7 @@ async function writeSections(job: { data: { vin: string } }): Promise<void> {
 				.set({
 					status: 'ready',
 					completedAt: new Date(), // Requirement 16.8, 79.1
-					updatedAt: new Date(),
+					updatedAt: new Date()
 				})
 				.where(eq(pipelineReports.vin, vin));
 
@@ -387,12 +558,18 @@ async function writeSections(job: { data: { vin: string } }): Promise<void> {
 					status: 'ready',
 					completedAt: new Date(),
 					updatedAt: new Date(),
-					errorMessage: `Partial completion: ${sectionsFailed.length} sections failed (${sectionsFailed.join(', ')})`,
+					errorMessage: `Partial completion: ${sectionsFailed.length} sections failed (${sectionsFailed.join(', ')})`
 				})
 				.where(eq(pipelineReports.vin, vin));
 
-			console.log(`[llm-write-sections] Partial completion for VIN: ${vin}. Failed sections: ${sectionsFailed.join(', ')}`);
-			await logProgress(vin, 'completed', `Generated ${sectionsGenerated.length}/${SECTION_PROMPTS.length} sections. Failed: ${sectionsFailed.join(', ')}`);
+			console.log(
+				`[llm-write-sections] Partial completion for VIN: ${vin}. Failed sections: ${sectionsFailed.join(', ')}`
+			);
+			await logProgress(
+				vin,
+				'completed',
+				`Generated ${sectionsGenerated.length}/${SECTION_PROMPTS.length} sections. Failed: ${sectionsFailed.join(', ')}`
+			);
 		}
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -405,7 +582,7 @@ async function writeSections(job: { data: { vin: string } }): Promise<void> {
 			.set({
 				status: 'failed',
 				errorMessage: `Section writing failed: ${errorMessage}`,
-				updatedAt: new Date(),
+				updatedAt: new Date()
 			})
 			.where(eq(pipelineReports.vin, vin));
 
@@ -416,7 +593,9 @@ async function writeSections(job: { data: { vin: string } }): Promise<void> {
 /**
  * Register the LLM write sections worker with pg-boss
  */
-export async function registerLLMWriteSectionsWorker(queue: import('pg-boss').PgBoss): Promise<void> {
+export async function registerLLMWriteSectionsWorker(
+	queue: import('pg-boss').PgBoss
+): Promise<void> {
 	await queue.work(Jobs.LLM_WRITE_SECTIONS, writeSectionsHandler);
 	console.log('[llm-write-sections] Worker registered');
 }

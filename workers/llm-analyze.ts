@@ -1,6 +1,6 @@
 /**
  * LLM Analysis Worker
- * 
+ *
  * Analyzes the complete stitched timeline using LLM to generate:
  * - Risk score (1-10)
  * - Verdict (buy/caution/avoid) with reasoning
@@ -8,9 +8,9 @@
  * - Gap analysis with explanations
  * - Odometer assessment
  * - Title assessment
- * 
+ *
  * Supports multiple LLM providers (Gemini, Anthropic) via unified service.
- * 
+ *
  * Requirements: 15.1-15.10, 45.1-45.6, 46.1-46.5, 82.1-82.5
  */
 
@@ -40,6 +40,119 @@ interface LLMAnalysisResult {
 	}>;
 	odometerAssessment: string;
 	titleAssessment: string;
+}
+
+function clampRiskScore(score: number): number {
+	return Math.max(1, Math.min(10, Math.round(score)));
+}
+
+function buildFallbackAnalysis(timeline: Timeline): LLMAnalysisResult {
+	const vehicleAge = Math.max(0, new Date().getFullYear() - timeline.identity.year);
+	const titleBrands = timeline.titleBrands.map((brand) => brand.brand);
+	const hasSevereTitleBrand = titleBrands.some((brand) => ['salvage', 'flood'].includes(brand));
+	const hasRebuiltTitle = titleBrands.includes('rebuilt');
+	const hasOdometerAnomaly = timeline.odometerReadings.some((reading) => reading.isAnomaly);
+	const longGap = timeline.gaps.some((gap) => gap.durationMonths >= 36);
+	const lastMileage = timeline.odometerReadings[timeline.odometerReadings.length - 1]?.mileage;
+	const expectedMileage = vehicleAge > 0 ? vehicleAge * 12000 : undefined;
+
+	let riskScore = 2;
+	riskScore += Math.min(3, timeline.damageRecords.length);
+	riskScore += Math.min(2, timeline.gaps.length);
+	riskScore += timeline.recalls.length > 0 ? 1 : 0;
+	riskScore += hasOdometerAnomaly ? 3 : 0;
+	riskScore += hasSevereTitleBrand ? 4 : hasRebuiltTitle ? 2 : 0;
+	riskScore += longGap ? 1 : 0;
+	riskScore = clampRiskScore(riskScore);
+
+	let verdict: LLMAnalysisResult['verdict'] = 'buy';
+	if (riskScore >= 8 || hasSevereTitleBrand || hasOdometerAnomaly) {
+		verdict = 'avoid';
+	} else if (riskScore >= 5 || timeline.damageRecords.length > 0 || timeline.gaps.length > 0) {
+		verdict = 'caution';
+	}
+
+	const topFlags: LLMAnalysisResult['topFlags'] = [];
+
+	if (titleBrands.length > 0) {
+		topFlags.push({
+			flag: `Title brands reported: ${titleBrands.join(', ')}`,
+			severity: hasSevereTitleBrand ? 'high' : 'medium',
+			explanation:
+				'Title branding can affect safety inspections, financing, insurance, and resale value.'
+		});
+	}
+
+	if (hasOdometerAnomaly) {
+		topFlags.push({
+			flag: 'Mileage anomaly detected',
+			severity: 'high',
+			explanation: 'The mileage history contains a rollback or an implausible annual usage rate.'
+		});
+	}
+
+	if (timeline.damageRecords.length > 0) {
+		topFlags.push({
+			flag: `${timeline.damageRecords.length} damage record${timeline.damageRecords.length === 1 ? '' : 's'} found`,
+			severity: timeline.damageRecords.length >= 2 ? 'high' : 'medium',
+			explanation:
+				'Auction and damage records suggest the vehicle has prior condition or repair history to verify.'
+		});
+	}
+
+	if (timeline.gaps.length > 0) {
+		topFlags.push({
+			flag: `${timeline.gaps.length} history gap${timeline.gaps.length === 1 ? '' : 's'} detected`,
+			severity: longGap ? 'high' : 'medium',
+			explanation:
+				'Long gaps do not prove a problem, but they reduce confidence in the continuity of the vehicle history.'
+		});
+	}
+
+	if (timeline.recalls.length > 0) {
+		topFlags.push({
+			flag: `${timeline.recalls.length} recall${timeline.recalls.length === 1 ? '' : 's'} reported`,
+			severity: 'medium',
+			explanation: 'Open recalls should be checked with a dealer before purchase or import.'
+		});
+	}
+
+	const gapAnalysis: LLMAnalysisResult['gapAnalysis'] = timeline.gaps.map((gap) => ({
+		startDate: gap.startDate,
+		endDate: gap.endDate,
+		durationMonths: gap.durationMonths,
+		likelyExplanation:
+			gap.durationMonths >= 36
+				? 'This is a long enough gap to justify asking for maintenance, registration, or storage records.'
+				: 'This may reflect private ownership, storage, or a period where no public record source captured activity.',
+		buyerConcernLevel: gap.durationMonths >= 36 ? 8 : gap.durationMonths >= 24 ? 6 : 4
+	}));
+
+	const odometerAssessment = hasOdometerAnomaly
+		? 'The mileage history contains at least one anomaly, so the odometer should not be trusted without supporting service or title records.'
+		: lastMileage && expectedMileage
+			? `The latest recorded mileage is ${lastMileage.toLocaleString()} miles against an expected baseline of about ${expectedMileage.toLocaleString()} miles for a ${vehicleAge}-year-old vehicle. The pattern looks directionally plausible, but the confidence still depends on how many sources contributed readings.`
+			: 'There are too few mileage records to make a strong odometer judgement, so an in-person inspection and supporting maintenance records are important.';
+
+	const titleAssessment =
+		titleBrands.length === 0
+			? 'No title brands were found in the stitched data, which is a positive signal, but it is only as strong as the source coverage available for this VIN.'
+			: `The title history shows ${titleBrands.join(', ')} branding. That should be treated as a meaningful value and condition risk until the branding history is independently verified.`;
+
+	return {
+		riskScore,
+		verdict,
+		verdictReasoning:
+			verdict === 'avoid'
+				? 'The available history shows one or more high-risk signals that materially affect trust in the vehicle condition or value.'
+				: verdict === 'caution'
+					? 'The report contains moderate risk signals, so this vehicle should only move forward with targeted verification and price discipline.'
+					: 'The stitched history does not show major red flags from the sources that responded, although limited source coverage still matters.',
+		topFlags: topFlags.slice(0, 5),
+		gapAnalysis,
+		odometerAssessment,
+		titleAssessment
+	};
 }
 
 /**
@@ -134,19 +247,16 @@ async function callLLMWithTimeout(
 	timeoutMs: number = 60000
 ): Promise<{ content: string; model: string; provider: string }> {
 	// Call unified LLM service (Requirement 82.1)
-	const response = await generateText(
-		[{ role: 'user', content: prompt }],
-		{
-			maxTokens: 2000,
-			temperature: 0.7,
-			timeout: timeoutMs,
-		}
-	);
+	const response = await generateText([{ role: 'user', content: prompt }], {
+		maxTokens: 2000,
+		temperature: 0.7,
+		timeout: timeoutMs
+	});
 
 	return {
 		content: response.content,
 		model: response.model,
-		provider: response.provider,
+		provider: response.provider
 	};
 }
 
@@ -157,13 +267,13 @@ function parseLLMResponse(responseText: string): LLMAnalysisResult | null {
 	try {
 		// Strip markdown code blocks if present (handles ```json...``` format)
 		let cleanedText = responseText.trim();
-		
+
 		// Remove opening code block markers (```json or ```)
 		cleanedText = cleanedText.replace(/^```(?:json)?\s*\n?/i, '');
-		
+
 		// Remove closing code block marker (```)
 		cleanedText = cleanedText.replace(/\n?```\s*$/, '');
-		
+
 		// Try to parse as JSON (Requirement 46.1)
 		const parsed = JSON.parse(cleanedText.trim());
 
@@ -184,12 +294,16 @@ function parseLLMResponse(responseText: string): LLMAnalysisResult | null {
 /**
  * Log pipeline progress
  */
-async function logProgress(vin: string, status: 'started' | 'completed' | 'failed', message?: string) {
+async function logProgress(
+	vin: string,
+	status: 'started' | 'completed' | 'failed',
+	message?: string
+) {
 	await db.insert(pipelineLog).values({
 		vin,
 		stage: 'llm-analyze',
 		status,
-		message,
+		message
 	});
 }
 
@@ -212,7 +326,7 @@ async function analyzeLLM(job: { data: { vin: string } }): Promise<void> {
 	await logProgress(vin, 'started');
 
 	try {
-		// Load stitched timeline from reports table (Requirement 15.1)
+		// Load stitched timeline from pipeline_reports (Requirement 15.1)
 		const [report] = await db
 			.select()
 			.from(pipelineReports)
@@ -236,24 +350,41 @@ async function analyzeLLM(job: { data: { vin: string } }): Promise<void> {
 		const llmInfo = getLLMInfo();
 		console.log(`[llm-analyze] Using ${llmInfo.provider} (${llmInfo.model}) for VIN: ${vin}`);
 
-		// Call LLM API with timeout (Requirement 82.1)
-		const response = await callLLMWithTimeout(prompt);
+		let analysisResult: LLMAnalysisResult;
+		let responseMeta: { model: string; provider: string };
 
-		// Parse and validate response (Requirement 46.1, 46.2)
-		const analysisResult = parseLLMResponse(response.content);
+		if (!llmInfo.configured) {
+			console.warn(
+				`[llm-analyze] No LLM provider configured for VIN ${vin}, using fallback analysis`
+			);
+			analysisResult = buildFallbackAnalysis(timeline);
+			responseMeta = {
+				model: 'rules-v1',
+				provider: 'fallback'
+			};
+		} else {
+			try {
+				// Call LLM API with timeout (Requirement 82.1)
+				const response = await callLLMWithTimeout(prompt);
 
-		if (!analysisResult) {
-			// Store raw response with parse error flag (Requirement 46.1)
-			await db
-				.update(pipelineReports)
-				.set({
-					llmFlags: { parseError: true, rawResponse: response.content, model: response.model, provider: response.provider },
-					llmVerdict: 'Analysis parsing failed',
-					updatedAt: new Date(),
-				})
-				.where(eq(pipelineReports.vin, vin));
-
-			throw new Error('Failed to parse LLM analysis response');
+				// Parse and validate response (Requirement 46.1, 46.2)
+				const parsedResponse = parseLLMResponse(response.content);
+				analysisResult = parsedResponse ?? buildFallbackAnalysis(timeline);
+				responseMeta = {
+					model: parsedResponse ? response.model : `${response.model}:fallback`,
+					provider: parsedResponse ? response.provider : 'fallback'
+				};
+			} catch (error) {
+				console.warn(
+					`[llm-analyze] LLM call failed for VIN ${vin}, using fallback analysis:`,
+					error
+				);
+				analysisResult = buildFallbackAnalysis(timeline);
+				responseMeta = {
+					model: 'rules-v1',
+					provider: 'fallback'
+				};
+			}
 		}
 
 		// Store analysis results (Requirement 15.9)
@@ -266,16 +397,20 @@ async function analyzeLLM(job: { data: { vin: string } }): Promise<void> {
 					gapAnalysis: analysisResult.gapAnalysis,
 					odometerAssessment: analysisResult.odometerAssessment,
 					titleAssessment: analysisResult.titleAssessment,
-					model: response.model,
-					provider: response.provider,
+					model: responseMeta.model,
+					provider: responseMeta.provider
 				},
 				llmVerdict: `${analysisResult.verdict.toUpperCase()}: ${analysisResult.verdictReasoning}`,
-				updatedAt: new Date(),
+				updatedAt: new Date()
 			})
 			.where(eq(pipelineReports.vin, vin));
 
-		console.log(`[llm-analyze] Analysis completed for VIN: ${vin} using ${response.provider}`);
-		await logProgress(vin, 'completed', `Risk score: ${analysisResult.riskScore}, Verdict: ${analysisResult.verdict}, Model: ${response.model}`);
+		console.log(`[llm-analyze] Analysis completed for VIN: ${vin} using ${responseMeta.provider}`);
+		await logProgress(
+			vin,
+			'completed',
+			`Risk score: ${analysisResult.riskScore}, Verdict: ${analysisResult.verdict}, Model: ${responseMeta.model}`
+		);
 
 		// Enqueue section writing job (Requirement 15.10)
 		const queue = await getQueue();
@@ -293,7 +428,7 @@ async function analyzeLLM(job: { data: { vin: string } }): Promise<void> {
 			.set({
 				status: 'failed',
 				errorMessage: `LLM analysis failed: ${errorMessage}`,
-				updatedAt: new Date(),
+				updatedAt: new Date()
 			})
 			.where(eq(pipelineReports.vin, vin));
 

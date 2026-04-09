@@ -34,6 +34,6 @@ export function getCurrentRate(): ExchangeRate {
 			6 * 60 * 60 * 1000
 		);
 	}
-	
+
 	return currentRate;
 }

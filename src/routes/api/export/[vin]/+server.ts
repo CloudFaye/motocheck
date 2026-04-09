@@ -1,7 +1,12 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { pipelineReports, reportSections, odometerReadings, vehiclePhotos } from '$lib/server/db/schema';
+import {
+	pipelineReports,
+	reportSections,
+	odometerReadings,
+	vehiclePhotos
+} from '$lib/server/db/schema';
 import { normalizeVIN } from '$lib/shared/vin-utils';
 import { eq, asc } from 'drizzle-orm';
 import {
@@ -17,7 +22,7 @@ import {
 	BorderStyle,
 	Packer,
 	Header,
-	Footer,
+	Footer
 } from 'docx';
 
 /**
@@ -32,16 +37,16 @@ const SECTION_ORDER = [
 	'recall_status',
 	'market_value',
 	'gap_analysis',
-	'buyers_checklist',
+	'buyers_checklist'
 ];
 
 /**
  * GET /api/export/:vin
  * Export report as DOCX file
- * 
+ *
  * Generates a Microsoft Word document with all report sections,
  * odometer graph data, and vehicle photos
- * 
+ *
  * Requirements: 52.1-52.6, 33.4
  */
 export const GET: RequestHandler = async ({ params }) => {
@@ -53,15 +58,12 @@ export const GET: RequestHandler = async ({ params }) => {
 
 		// Query report
 		const report = await db.query.pipelineReports.findFirst({
-			where: eq(pipelineReports.vin, vin),
+			where: eq(pipelineReports.vin, vin)
 		});
 
 		// Return 404 if report doesn't exist
 		if (!report) {
-			return json(
-				{ error: 'Report not found' },
-				{ status: 404 }
-			);
+			return json({ error: 'Report not found' }, { status: 404 });
 		}
 
 		// Return 400 if report is not ready
@@ -74,14 +76,14 @@ export const GET: RequestHandler = async ({ params }) => {
 
 		// Query all sections
 		const sections = await db.query.reportSections.findMany({
-			where: eq(reportSections.vin, vin),
+			where: eq(reportSections.vin, vin)
 		});
 
 		// Sort sections by predefined order
 		sections.sort((a, b) => {
 			const indexA = SECTION_ORDER.indexOf(a.sectionKey);
 			const indexB = SECTION_ORDER.indexOf(b.sectionKey);
-			
+
 			if (indexA !== -1 && indexB !== -1) {
 				return indexA - indexB;
 			}
@@ -93,13 +95,13 @@ export const GET: RequestHandler = async ({ params }) => {
 		// Query odometer readings
 		const readings = await db.query.odometerReadings.findMany({
 			where: eq(odometerReadings.vin, vin),
-			orderBy: [asc(odometerReadings.readingDate)],
+			orderBy: [asc(odometerReadings.readingDate)]
 		});
 
 		// Query photos
 		const photos = await db.query.vehiclePhotos.findMany({
 			where: eq(vehiclePhotos.vin, vin),
-			limit: 10, // Include up to 10 photos
+			limit: 10 // Include up to 10 photos
 		});
 
 		// Generate DOCX document
@@ -108,35 +110,35 @@ export const GET: RequestHandler = async ({ params }) => {
 				{
 					headers: {
 						default: new Header({
-							children: [createHeader()],
-						}),
+							children: [createHeader()]
+						})
 					},
 					footers: {
 						default: new Footer({
-							children: [createFooter()],
-						}),
+							children: [createFooter()]
+						})
 					},
 					children: [
 						// Title
 						...createTitle(report),
-						
+
 						// Vehicle identity
 						...createVehicleIdentity(report),
-						
+
 						// LLM verdict
 						...createVerdict(report),
-						
+
 						// Report sections
 						...createSections(sections),
-						
+
 						// Odometer data
 						...createOdometerSection(readings),
-						
+
 						// Photos section
-						...createPhotosSection(photos),
-					],
-				},
-			],
+						...createPhotosSection(photos)
+					]
+				}
+			]
 		});
 
 		// Convert to buffer
@@ -148,16 +150,12 @@ export const GET: RequestHandler = async ({ params }) => {
 			headers: {
 				'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 				'Content-Disposition': `attachment; filename="vehicle-history-${vin}.docx"`,
-				'Content-Length': buffer.length.toString(),
-			},
+				'Content-Length': buffer.length.toString()
+			}
 		});
-
 	} catch (error) {
 		console.error('[GET /api/export/:vin] Error:', error);
-		return json(
-			{ error: 'Internal server error' },
-			{ status: 500 }
-		);
+		return json({ error: 'Internal server error' }, { status: 500 });
 	}
 };
 
@@ -168,7 +166,7 @@ function createHeader(): Paragraph {
 	const reportDate = new Date().toLocaleDateString('en-US', {
 		year: 'numeric',
 		month: 'long',
-		day: 'numeric',
+		day: 'numeric'
 	});
 
 	return new Paragraph({
@@ -176,12 +174,12 @@ function createHeader(): Paragraph {
 			new TextRun({
 				text: 'Vehicle History Report',
 				bold: true,
-				size: 24,
+				size: 24
 			}),
 			new TextRun({
 				text: ` | ${reportDate}`,
-				size: 20,
-			}),
+				size: 20
+			})
 		],
 		spacing: { after: 200 },
 		border: {
@@ -189,9 +187,9 @@ function createHeader(): Paragraph {
 				color: '1e40af',
 				space: 1,
 				style: BorderStyle.SINGLE,
-				size: 12,
-			},
-		},
+				size: 12
+			}
+		}
 	});
 }
 
@@ -204,8 +202,8 @@ function createFooter(): Paragraph {
 			new TextRun({
 				text: 'This report is for informational purposes only. Always verify critical details independently.',
 				size: 16,
-				italics: true,
-			}),
+				italics: true
+			})
 		],
 		spacing: { before: 200 },
 		alignment: AlignmentType.CENTER,
@@ -214,9 +212,9 @@ function createFooter(): Paragraph {
 				color: 'e5e7eb',
 				space: 1,
 				style: BorderStyle.SINGLE,
-				size: 6,
-			},
-		},
+				size: 6
+			}
+		}
 	});
 }
 
@@ -232,22 +230,22 @@ function createTitle(report: typeof pipelineReports.$inferSelect): Paragraph[] {
 				new TextRun({
 					text: vehicleName || 'Vehicle History Report',
 					bold: true,
-					size: 36,
-				}),
+					size: 36
+				})
 			],
 			spacing: { before: 400, after: 200 },
-			alignment: AlignmentType.CENTER,
+			alignment: AlignmentType.CENTER
 		}),
 		new Paragraph({
 			children: [
 				new TextRun({
 					text: `VIN: ${report.vin}`,
-					size: 24,
-				}),
+					size: 24
+				})
 			],
 			spacing: { after: 400 },
-			alignment: AlignmentType.CENTER,
-		}),
+			alignment: AlignmentType.CENTER
+		})
 	];
 }
 
@@ -272,10 +270,10 @@ function createVehicleIdentity(report: typeof pipelineReports.$inferSelect): (Pa
 		new Paragraph({
 			text: 'Vehicle Specifications',
 			heading: HeadingLevel.HEADING_1,
-			spacing: { before: 400, after: 200 },
+			spacing: { before: 400, after: 200 }
 		}),
 		createTable(['Specification', 'Value'], rows),
-		new Paragraph({ text: '', spacing: { after: 200 } }),
+		new Paragraph({ text: '', spacing: { after: 200 } })
 	];
 }
 
@@ -289,17 +287,17 @@ function createVerdict(report: typeof pipelineReports.$inferSelect): Paragraph[]
 		new Paragraph({
 			text: 'AI Analysis',
 			heading: HeadingLevel.HEADING_1,
-			spacing: { before: 400, after: 200 },
+			spacing: { before: 400, after: 200 }
 		}),
 		new Paragraph({
 			children: [
 				new TextRun({
 					text: report.llmVerdict,
-					size: 24,
-				}),
+					size: 24
+				})
 			],
-			spacing: { after: 400 },
-		}),
+			spacing: { after: 400 }
+		})
 	];
 }
 
@@ -320,7 +318,7 @@ function createSections(sections: Array<typeof reportSections.$inferSelect>): Pa
 			new Paragraph({
 				text: title,
 				heading: HeadingLevel.HEADING_1,
-				spacing: { before: 400, after: 200 },
+				spacing: { before: 400, after: 200 }
 			})
 		);
 
@@ -333,10 +331,10 @@ function createSections(sections: Array<typeof reportSections.$inferSelect>): Pa
 						children: [
 							new TextRun({
 								text: para.trim(),
-								size: 24,
-							}),
+								size: 24
+							})
 						],
-						spacing: { after: 200 },
+						spacing: { after: 200 }
 					})
 				);
 			}
@@ -351,57 +349,61 @@ function createSections(sections: Array<typeof reportSections.$inferSelect>): Pa
 /**
  * Create odometer section
  */
-function createOdometerSection(readings: Array<typeof odometerReadings.$inferSelect>): (Paragraph | Table)[] {
+function createOdometerSection(
+	readings: Array<typeof odometerReadings.$inferSelect>
+): (Paragraph | Table)[] {
 	if (readings.length === 0) return [];
 
-	const rows = readings.map(reading => [
+	const rows = readings.map((reading) => [
 		new Date(reading.readingDate).toLocaleDateString(),
 		reading.mileage.toLocaleString(),
 		reading.source,
-		reading.isAnomaly ? '⚠️ Anomaly' : '✓ Normal',
+		reading.isAnomaly ? '⚠️ Anomaly' : '✓ Normal'
 	]);
 
 	return [
 		new Paragraph({
 			text: 'Odometer History',
 			heading: HeadingLevel.HEADING_1,
-			spacing: { before: 400, after: 200 },
+			spacing: { before: 400, after: 200 }
 		}),
 		createTable(['Date', 'Mileage', 'Source', 'Status'], rows),
-		new Paragraph({ text: '', spacing: { after: 200 } }),
+		new Paragraph({ text: '', spacing: { after: 200 } })
 	];
 }
 
 /**
  * Create photos section
  */
-function createPhotosSection(photos: Array<typeof vehiclePhotos.$inferSelect>): (Paragraph | Table)[] {
+function createPhotosSection(
+	photos: Array<typeof vehiclePhotos.$inferSelect>
+): (Paragraph | Table)[] {
 	if (photos.length === 0) return [];
 
-	const rows = photos.map(photo => [
+	const rows = photos.map((photo) => [
 		photo.source,
 		photo.capturedAt ? new Date(photo.capturedAt).toLocaleDateString() : 'N/A',
-		photo.photoType || 'N/A',
+		photo.photoType || 'N/A'
 	]);
 
 	return [
 		new Paragraph({
 			text: 'Vehicle Photos',
 			heading: HeadingLevel.HEADING_1,
-			spacing: { before: 400, after: 200 },
+			spacing: { before: 400, after: 200 }
 		}),
 		new Paragraph({
 			children: [
 				new TextRun({
 					text: `${photos.length} photo(s) available. Visit the online report to view images.`,
 					size: 24,
-					italics: true,
-				}),
+					italics: true
+				})
 			],
-			spacing: { after: 200 },
+			spacing: { after: 200 }
 		}),
 		createTable(['Source', 'Date', 'Type'], rows),
-		new Paragraph({ text: '', spacing: { after: 200 } }),
+		new Paragraph({ text: '', spacing: { after: 200 } })
 	];
 }
 
@@ -412,13 +414,13 @@ function createTable(headers: string[], rows: string[][]): Table {
 	return new Table({
 		width: {
 			size: 100,
-			type: WidthType.PERCENTAGE,
+			type: WidthType.PERCENTAGE
 		},
 		rows: [
 			// Header row
 			new TableRow({
 				children: headers.map(
-					header =>
+					(header) =>
 						new TableCell({
 							children: [
 								new Paragraph({
@@ -427,54 +429,54 @@ function createTable(headers: string[], rows: string[][]): Table {
 											text: header,
 											bold: true,
 											size: 22,
-											color: 'FFFFFF',
-										}),
-									],
-								}),
+											color: 'FFFFFF'
+										})
+									]
+								})
 							],
 							shading: {
-								fill: '1e40af',
+								fill: '1e40af'
 							},
 							margins: {
 								top: 100,
 								bottom: 100,
 								left: 100,
-								right: 100,
-							},
+								right: 100
+							}
 						})
 				),
-				tableHeader: true,
+				tableHeader: true
 			}),
 			// Data rows
 			...rows.map(
 				(row, index) =>
 					new TableRow({
 						children: row.map(
-							cell =>
+							(cell) =>
 								new TableCell({
 									children: [
 										new Paragraph({
 											children: [
 												new TextRun({
 													text: cell || 'N/A',
-													size: 22,
-												}),
-											],
-										}),
+													size: 22
+												})
+											]
+										})
 									],
 									shading: {
-										fill: index % 2 === 0 ? 'f3f4f6' : 'FFFFFF',
+										fill: index % 2 === 0 ? 'f3f4f6' : 'FFFFFF'
 									},
 									margins: {
 										top: 100,
 										bottom: 100,
 										left: 100,
-										right: 100,
-									},
+										right: 100
+									}
 								})
-						),
+						)
 					})
-			),
+			)
 		],
 		borders: {
 			top: { style: BorderStyle.SINGLE, size: 1, color: 'd1d5db' },
@@ -482,7 +484,7 @@ function createTable(headers: string[], rows: string[][]): Table {
 			left: { style: BorderStyle.SINGLE, size: 1, color: 'd1d5db' },
 			right: { style: BorderStyle.SINGLE, size: 1, color: 'd1d5db' },
 			insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'e5e7eb' },
-			insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'e5e7eb' },
-		},
+			insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'e5e7eb' }
+		}
 	});
 }

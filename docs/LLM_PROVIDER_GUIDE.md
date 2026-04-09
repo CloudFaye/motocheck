@@ -5,21 +5,25 @@ The vehicle history platform supports multiple LLM providers with easy switching
 ## Supported Providers
 
 ### 1. Google Gemini
+
 - **Status**: Free tier available (20 requests/day per model)
 - **Best for**: Testing, development, small-scale production
 - **Setup**: See [GEMINI_SETUP.md](./GEMINI_SETUP.md)
 
 ### 2. OpenAI
+
 - **Status**: Pay-as-you-go (gpt-4o-mini is very affordable)
 - **Best for**: Production with consistent quality and reliability
 - **Setup**: Get API key from https://platform.openai.com/api-keys
 
 ### 3. OpenRouter
+
 - **Status**: Free models available, paid models from $0.06/1M tokens
 - **Best for**: Access to open-source models (Llama, Mistral, etc.)
 - **Setup**: Get API key from https://openrouter.ai/keys
 
 ### 4. Anthropic Claude
+
 - **Status**: Paid only
 - **Best for**: High-quality analysis, complex reasoning
 - **Setup**: Get API key from https://console.anthropic.com/
@@ -74,6 +78,7 @@ To switch between providers:
 4. Verify in logs that the new provider is being used
 
 Example: Switching from Gemini to OpenAI:
+
 ```bash
 LLM_PROVIDER=openai
 OPENAI_API_KEY=sk-your_key
@@ -93,16 +98,16 @@ All providers use the same interface, making switching seamless with no code cha
 
 ## Provider Comparison
 
-| Feature | Gemini Free | OpenAI | OpenRouter Free | Anthropic |
-|---------|-------------|--------|-----------------|-----------|
-| **Cost** | Free | $0.15-0.60/1M tokens | Free | $3-15/1M tokens |
-| **Daily Limit** | 20 requests | Unlimited | Unlimited | Unlimited |
-| **Rate Limit** | 15 RPM | 500 RPM | Varies | 50 RPM |
-| **Quality** | Excellent | Excellent | Good-Excellent | Excellent |
-| **JSON Support** | ✅ Native | ✅ Native | ✅ Native | ✅ Native |
-| **Timeout Handling** | ✅ 60s | ✅ 60s | ✅ 60s | ✅ 60s |
-| **Retry Logic** | ✅ Auto | ✅ Auto | ✅ Auto | ✅ Auto |
-| **Best For** | Testing | Production | Development | Premium |
+| Feature              | Gemini Free | OpenAI               | OpenRouter Free | Anthropic       |
+| -------------------- | ----------- | -------------------- | --------------- | --------------- |
+| **Cost**             | Free        | $0.15-0.60/1M tokens | Free            | $3-15/1M tokens |
+| **Daily Limit**      | 20 requests | Unlimited            | Unlimited       | Unlimited       |
+| **Rate Limit**       | 15 RPM      | 500 RPM              | Varies          | 50 RPM          |
+| **Quality**          | Excellent   | Excellent            | Good-Excellent  | Excellent       |
+| **JSON Support**     | ✅ Native   | ✅ Native            | ✅ Native       | ✅ Native       |
+| **Timeout Handling** | ✅ 60s      | ✅ 60s               | ✅ 60s          | ✅ 60s          |
+| **Retry Logic**      | ✅ Auto     | ✅ Auto              | ✅ Auto         | ✅ Auto         |
+| **Best For**         | Testing     | Production           | Development     | Premium         |
 
 ## Model Options
 
@@ -176,6 +181,7 @@ Both providers log token usage:
 ### Cost Tracking
 
 For paid providers, monitor costs in:
+
 - **Gemini**: Google Cloud Console
 - **Anthropic**: Anthropic Console
 
@@ -184,16 +190,19 @@ For paid providers, monitor costs in:
 The unified LLM service handles:
 
 ### Timeout Errors
+
 - Default: 60 seconds per request
 - Automatically retried by pg-boss (3 attempts)
 - Exponential backoff between retries
 
 ### Rate Limiting
+
 - Gemini: Handles 429 errors with retry
 - Anthropic: Handles 429 errors with Retry-After header
 - Both: Exponential backoff
 
 ### API Key Errors
+
 - Clear error messages in logs
 - Worker fails gracefully
 - Report marked as failed with error message
@@ -229,16 +238,19 @@ pnpm test:vin WBXHT3Z34G4A47548
 ## Best Practices
 
 ### Development
+
 1. Use Gemini free tier for development
 2. Test with multiple VINs to verify quality
 3. Monitor token usage patterns
 
 ### Staging
+
 1. Use Gemini free tier or paid tier
 2. Test with production-like data volume
 3. Verify rate limits are sufficient
 
 ### Production
+
 1. Start with Gemini free tier
 2. Monitor daily usage and rate limits
 3. Upgrade to paid Gemini or switch to Anthropic when needed
@@ -251,6 +263,7 @@ pnpm test:vin WBXHT3Z34G4A47548
 **Symptoms**: Logs still show old provider after changing `LLM_PROVIDER`
 
 **Solutions**:
+
 1. Verify environment variable is set in Railway
 2. Check both web app and worker services have the variable
 3. Manually trigger a redeploy
@@ -261,6 +274,7 @@ pnpm test:vin WBXHT3Z34G4A47548
 **Symptoms**: "API key not configured" error
 
 **Solutions**:
+
 1. Verify API key is copied correctly (no spaces)
 2. Check the key is valid in provider console
 3. Ensure `LLM_PROVIDER` matches the API key provider
@@ -271,6 +285,7 @@ pnpm test:vin WBXHT3Z34G4A47548
 **Symptoms**: Poor analysis or section quality
 
 **Solutions**:
+
 1. Try different model (e.g., gemini-1.5-pro instead of flash)
 2. Check if prompts need adjustment for provider
 3. Verify timeline data is complete
@@ -281,6 +296,7 @@ pnpm test:vin WBXHT3Z34G4A47548
 **Symptoms**: "Rate limit exceeded" in logs
 
 **Solutions**:
+
 1. Reduce worker concurrency
 2. Upgrade to paid tier
 3. Implement request throttling
@@ -293,9 +309,9 @@ pnpm test:vin WBXHT3Z34G4A47548
 ```typescript
 // In worker code
 const response = await generateText(messages, {
-  maxTokens: 2000,
-  temperature: 0.7,
-  timeout: 120000, // 2 minutes
+	maxTokens: 2000,
+	temperature: 0.7,
+	timeout: 120000 // 2 minutes
 });
 ```
 
@@ -303,20 +319,20 @@ const response = await generateText(messages, {
 
 ```typescript
 // More creative responses
-temperature: 0.9
+temperature: 0.9;
 
 // More deterministic responses
-temperature: 0.3
+temperature: 0.3;
 ```
 
 ### Custom Max Tokens
 
 ```typescript
 // Longer responses
-maxTokens: 4000
+maxTokens: 4000;
 
 // Shorter responses
-maxTokens: 500
+maxTokens: 500;
 ```
 
 ## Migration Guide
@@ -348,10 +364,12 @@ maxTokens: 500
 ## Support
 
 ### Provider-Specific Issues
+
 - **Gemini**: https://ai.google.dev/docs
 - **Anthropic**: https://docs.anthropic.com/
 
 ### Application Issues
+
 - Check worker logs for detailed errors
 - Verify environment variables are correct
 - Test with the test-vin script
@@ -367,6 +385,7 @@ The unified LLM service is designed to support additional providers. To add a ne
 4. Test thoroughly with sample VINs
 
 Potential future providers:
+
 - OpenAI GPT-4
 - Groq (Llama models)
 - Together AI

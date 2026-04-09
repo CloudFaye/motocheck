@@ -15,7 +15,10 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 	const rateLimit = checkRateLimit(ip, 5, 60);
 
 	if (!rateLimit.allowed) {
-		return json({ error: 'Rate limit exceeded' }, { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } });
+		return json(
+			{ error: 'Rate limit exceeded' },
+			{ status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } }
+		);
 	}
 
 	let body;
@@ -76,15 +79,18 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		const dutyCalc = calculateDuty(valuation.cifUsd, rate.cbnRate);
 
 		// Store comprehensive data in cache
-		const [inserted] = await db.insert(lookups).values({
-			vin: normalizedVin,
-			decodedJson: vehicleData,
-			ncsValuationUsd: String(valuation.cifUsd),
-			valuationConfidence: valuation.confidence,
-			dutyJson: dutyCalc,
-			cbnRateNgn: String(rate.cbnRate),
-			rateFetchedAt: rate.fetchedAt
-		}).returning();
+		const [inserted] = await db
+			.insert(lookups)
+			.values({
+				vin: normalizedVin,
+				decodedJson: vehicleData,
+				ncsValuationUsd: String(valuation.cifUsd),
+				valuationConfidence: valuation.confidence,
+				dutyJson: dutyCalc,
+				cbnRateNgn: String(rate.cbnRate),
+				rateFetchedAt: rate.fetchedAt
+			})
+			.returning();
 
 		return json({
 			lookupId: inserted.id,

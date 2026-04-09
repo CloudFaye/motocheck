@@ -1,16 +1,13 @@
 /**
  * NICB Normalizer
- * 
+ *
  * Extracts theft records from NICB VINCheck API responses.
  * NICB (National Insurance Crime Bureau) tracks stolen vehicles.
- * 
+ *
  * Requirements: 11.3
  */
 
-import type {
-	NormalizedVehicleRecord,
-	VehicleEvent
-} from '../../src/lib/shared/types.js';
+import type { NormalizedVehicleRecord, VehicleEvent } from '../../src/lib/shared/types.js';
 
 /**
  * NICB API response structure
@@ -32,7 +29,7 @@ interface NicbResponse {
 
 /**
  * Normalize NICB theft data
- * 
+ *
  * Requirements: 11.3
  */
 export async function normalizeNicb(
@@ -42,9 +39,9 @@ export async function normalizeNicb(
 	_rawHtml: string | null
 ): Promise<NormalizedVehicleRecord> {
 	const nicbData = rawJson as NicbResponse;
-	
+
 	const events: VehicleEvent[] = [];
-	
+
 	// Extract theft records if available
 	if (nicbData.theftRecords && Array.isArray(nicbData.theftRecords)) {
 		for (const record of nicbData.theftRecords) {
@@ -52,9 +49,10 @@ export async function normalizeNicb(
 			events.push({
 				type: 'theft',
 				date: record.reportDate,
-				description: record.status === 'recovered' 
-					? `Vehicle reported stolen and later recovered`
-					: `Vehicle reported stolen`,
+				description:
+					record.status === 'recovered'
+						? `Vehicle reported stolen and later recovered`
+						: `Vehicle reported stolen`,
 				location: record.location,
 				details: {
 					status: record.status,
@@ -69,7 +67,7 @@ export async function normalizeNicb(
 		events.push({
 			type: 'theft',
 			date: nicbData.stolenDate,
-			description: nicbData.recoveredDate 
+			description: nicbData.recoveredDate
 				? `Vehicle reported stolen and later recovered`
 				: `Vehicle reported stolen`,
 			location: undefined,
@@ -80,7 +78,7 @@ export async function normalizeNicb(
 			}
 		});
 	}
-	
+
 	// Return normalized record
 	return {
 		vin,

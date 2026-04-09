@@ -11,6 +11,29 @@ import { lookups, orders } from '../lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import type { ComprehensiveVehicleData } from '../lib/server/vehicle/types';
 
+interface TelegramStatusMessage {
+	message_id: number;
+}
+
+interface TelegramCheckContext {
+	chat: { id: number | string };
+	message: { text: string };
+	reply: (text: string) => Promise<TelegramStatusMessage>;
+	telegram: {
+		editMessageText: (
+			chatId: number | string,
+			messageId: number,
+			inlineMessageId: undefined,
+			text: string,
+			extra?: {
+				reply_markup?: {
+					inline_keyboard: Array<Array<{ text: string; url: string }>>;
+				};
+			}
+		) => Promise<unknown>;
+	};
+}
+
 const bot = new Telegraf(config.TELEGRAM_BOT_TOKEN);
 
 bot.start((ctx) => {
@@ -31,7 +54,7 @@ bot.help((ctx) => {
 			'1. Send a 17-character VIN\n' +
 			'2. Review the vehicle details and duty estimate\n' +
 			'3. Click the payment link to purchase full report\n' +
-			'4. Receive PDF report via Telegram\n\n' +
+			'4. Receive report delivery updates via Telegram\n\n' +
 			'Price: ₦5,000 per report\n\n' +
 			'Support: Contact @support'
 	);
@@ -61,7 +84,7 @@ bot.on('text', async (ctx) => {
 	}
 });
 
-async function handleVinCheck(ctx: any, vin: string) {
+async function handleVinCheck(ctx: TelegramCheckContext, vin: string) {
 	const chatId = String(ctx.chat.id);
 
 	// Rate limiting (separate namespace for Telegram)
@@ -80,15 +103,15 @@ async function handleVinCheck(ctx: any, vin: string) {
 
 		let lookupId: string;
 		let vehicleData: ComprehensiveVehicleData;
-		let duty: any;
+		let duty: ReturnType<typeof calculateDuty>;
 		let confidence: string;
 
 		if (cached.length > 0) {
 			const lookup = cached[0];
 			lookupId = lookup.id;
 			vehicleData = lookup.decodedJson as ComprehensiveVehicleData;
-			duty = lookup.dutyJson;
-			confidence = lookup.valuationConfidence;
+			duty = lookup.dutyJson as ReturnType<typeof calculateDuty>;
+			confidence = lookup.valuationConfidence || 'estimated';
 		} else {
 			// Decode VIN
 			vehicleData = await decodeVehicle(vin);
@@ -154,12 +177,13 @@ async function handleVinCheck(ctx: any, vin: string) {
 				inline_keyboard: [[{ text: '💳 Purchase Report (₦5,000)', url: payment.paymentUrl }]]
 			}
 		});
-	} catch (error: any) {
+	} catch (error) {
+		const message = error instanceof Error ? error.message : 'Failed to decode VIN';
 		await ctx.telegram.editMessageText(
 			ctx.chat.id,
 			statusMsg.message_id,
 			undefined,
-			`❌ Error: ${error.message || 'Failed to decode VIN'}`
+			`❌ Error: ${message}`
 		);
 	}
 }

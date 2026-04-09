@@ -1,8 +1,8 @@
 /**
  * NMVTIS Fetcher Worker
- * 
+ *
  * Fetches title history from NMVTIS provider API with authentication
- * 
+ *
  * Requirements: 5.1, 5.2, 5.3, 5.4, 5.5
  */
 
@@ -28,26 +28,26 @@ type Job = {
 async function fetchNMVTIS(vin: string): Promise<Record<string, unknown>> {
 	const apiUrl = process.env.NMVTIS_API_URL;
 	const apiKey = process.env.NMVTIS_API_KEY;
-	
+
 	// Validate environment variables (Requirement 5.5)
 	if (!apiUrl || !apiKey) {
 		throw new Error('NMVTIS_API_URL and NMVTIS_API_KEY environment variables are required');
 	}
-	
+
 	try {
 		// Call NMVTIS provider API with authentication (Requirement 5.1, 5.2)
 		const response = await fetch(`${apiUrl}?vin=${vin}`, {
 			headers: {
-				'Authorization': `Bearer ${apiKey}`,
-				'Content-Type': 'application/json',
+				Authorization: `Bearer ${apiKey}`,
+				'Content-Type': 'application/json'
 			},
-			signal: AbortSignal.timeout(15000), // 15 second timeout for paid API
+			signal: AbortSignal.timeout(15000) // 15 second timeout for paid API
 		});
-		
+
 		if (!response.ok) {
 			throw new Error(`NMVTIS API error: ${response.status} ${response.statusText}`);
 		}
-		
+
 		return await response.json();
 	} catch (error) {
 		if (error instanceof Error && error.name === 'TimeoutError') {
@@ -68,119 +68,127 @@ export async function handleFetchNMVTIS(jobs: Job[]): Promise<void> {
 
 async function processFetchNMVTIS(job: Job): Promise<void> {
 	const { vin } = job.data;
-	
+
 	// Check if NMVTIS API is configured (optional source)
 	const apiUrl = process.env.NMVTIS_API_URL;
 	const apiKey = process.env.NMVTIS_API_KEY;
-	
+
 	if (!apiUrl || !apiKey) {
 		console.log(`[fetch-nmvtis] Skipping VIN ${vin} - NMVTIS API not configured (optional source)`);
-		
+
 		// Store as skipped in raw_data
-		await db.insert(rawData).values({
-			vin,
-			source: 'nmvtis',
-			rawJson: {},
-			success: false,
-			errorMessage: 'NMVTIS API not configured (optional source)',
-		}).onConflictDoUpdate({
-			target: [rawData.vin, rawData.source],
-			set: {
-				fetchedAt: new Date(),
+		await db
+			.insert(rawData)
+			.values({
+				vin,
+				source: 'nmvtis',
+				rawJson: {},
 				success: false,
-				errorMessage: 'NMVTIS API not configured (optional source)',
-			},
-		});
-		
+				errorMessage: 'NMVTIS API not configured (optional source)'
+			})
+			.onConflictDoUpdate({
+				target: [rawData.vin, rawData.source],
+				set: {
+					fetchedAt: new Date(),
+					success: false,
+					errorMessage: 'NMVTIS API not configured (optional source)'
+				}
+			});
+
 		// Log as skipped (not failed)
 		await db.insert(pipelineLog).values({
 			vin,
 			stage: 'fetch-nmvtis',
 			status: 'completed',
-			message: 'Skipped - NMVTIS API not configured (optional source)',
+			message: 'Skipped - NMVTIS API not configured (optional source)'
 		});
-		
+
 		return; // Don't throw error, just skip
 	}
-	
+
 	// Log pipeline progress: started
 	await db.insert(pipelineLog).values({
 		vin,
 		stage: 'fetch-nmvtis',
 		status: 'started',
-		message: 'Fetching NMVTIS title history data',
+		message: 'Fetching NMVTIS title history data'
 	});
-	
+
 	console.log(`[fetch-nmvtis] Starting fetch for VIN: ${vin}`);
-	
+
 	try {
 		// Call NMVTIS provider API (Requirement 5.1)
 		const rawJson = await fetchNMVTIS(vin);
-		
+
 		// Store raw JSON response (Requirement 5.3)
-		await db.insert(rawData).values({
-			vin,
-			source: 'nmvtis',
-			rawJson,
-			success: true,
-		}).onConflictDoUpdate({
-			target: [rawData.vin, rawData.source],
-			set: {
+		await db
+			.insert(rawData)
+			.values({
+				vin,
+				source: 'nmvtis',
 				rawJson,
-				fetchedAt: new Date(),
-				success: true,
-				errorMessage: null,
-			},
-		});
-		
+				success: true
+			})
+			.onConflictDoUpdate({
+				target: [rawData.vin, rawData.source],
+				set: {
+					rawJson,
+					fetchedAt: new Date(),
+					success: true,
+					errorMessage: null
+				}
+			});
+
 		// Log pipeline progress: completed
 		await db.insert(pipelineLog).values({
 			vin,
 			stage: 'fetch-nmvtis',
 			status: 'completed',
-			message: 'Successfully fetched NMVTIS data',
+			message: 'Successfully fetched NMVTIS data'
 		});
-		
+
 		console.log(`[fetch-nmvtis] Successfully fetched data for VIN: ${vin}`);
-		
+
 		// Enqueue normalization job on success (Requirement 5.4)
 		const queue = await getQueue();
 		await queue.send(Jobs.NORMALIZE, {
 			vin,
-			source: 'nmvtis',
+			source: 'nmvtis'
 		});
-		
+
 		console.log(`[fetch-nmvtis] Enqueued normalization job for VIN: ${vin}`);
-		
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-		
+
 		// Store error in raw_data table
-		await db.insert(rawData).values({
-			vin,
-			source: 'nmvtis',
-			rawJson: {},
-			success: false,
-			errorMessage,
-		}).onConflictDoUpdate({
-			target: [rawData.vin, rawData.source],
-			set: {
-				fetchedAt: new Date(),
+		await db
+			.insert(rawData)
+			.values({
+				vin,
+				source: 'nmvtis',
+				rawJson: {},
 				success: false,
-				errorMessage,
-			},
-		});
-		
+				errorMessage
+			})
+			.onConflictDoUpdate({
+				target: [rawData.vin, rawData.source],
+				set: {
+					fetchedAt: new Date(),
+					success: false,
+					errorMessage
+				}
+			});
+
 		// Log pipeline progress: failed
 		await db.insert(pipelineLog).values({
 			vin,
 			stage: 'fetch-nmvtis',
 			status: 'failed',
-			message: `Failed to fetch NMVTIS data: ${errorMessage}`,
+			message: `Failed to fetch NMVTIS data: ${errorMessage}`
 		});
-		
+
 		console.error(`[fetch-nmvtis] Failed for VIN ${vin}:`, error);
-		
+
 		// Re-throw to trigger queue retry
 		throw error;
 	}
@@ -191,6 +199,6 @@ async function processFetchNMVTIS(job: Job): Promise<void> {
  */
 export async function registerFetchNMVTISWorker(queue: PgBoss): Promise<void> {
 	await queue.work(Jobs.FETCH_NMVTIS, handleFetchNMVTIS);
-	
+
 	console.log('[fetch-nmvtis] Worker registered');
 }

@@ -26,7 +26,7 @@ export interface VehicleEvent {
 	date: string; // ISO 8601
 	description: string;
 	location?: string;
-	details: Record<string, any>;
+	details: Record<string, unknown>;
 }
 
 export type OdometerSource =
@@ -149,4 +149,6 @@ export type DataSource =
 	| 'copart'
 	| 'iaai'
 	| 'autotrader'
-	| 'cargurus';
+	| 'cargurus'
+	| 'jdpower'
+	| 'vininspect';

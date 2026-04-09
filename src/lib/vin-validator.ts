@@ -34,9 +34,9 @@ export function sanitizeVIN(vin: string): string {
  */
 export function getVINError(vin: string): string | null {
 	if (!vin) return 'VIN is required';
-	
+
 	const sanitized = sanitizeVIN(vin);
-	
+
 	if (sanitized.length !== 17) {
 		return `VIN must be exactly 17 characters (you entered ${sanitized.length})`;
 	}

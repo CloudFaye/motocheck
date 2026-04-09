@@ -1,9 +1,9 @@
 /**
  * CarGurus Normalizer
- * 
+ *
  * Extracts market value data from CarGurus price ratings.
  * CarGurus provides price analysis and market comparisons.
- * 
+ *
  * Requirements: 40.1-40.6
  */
 
@@ -29,7 +29,7 @@ interface CarGurusData {
 
 /**
  * Normalize CarGurus price data
- * 
+ *
  * Requirements: 40.1-40.6
  */
 export async function normalizeCargurus(
@@ -39,20 +39,23 @@ export async function normalizeCargurus(
 	_rawHtml: string | null
 ): Promise<NormalizedVehicleRecord> {
 	const cargurusData = rawJson as CarGurusData;
-	
+
 	// CarGurus primarily provides market value data, not events
 	const events: VehicleEvent[] = [];
 	const odometerReadings: OdometerReading[] = [];
-	
+
 	// Extract market value data
-	const marketValue: MarketValue | undefined = cargurusData.currentPrice || cargurusData.marketAverage ? {
-		askingPrice: cargurusData.currentPrice,
-		priceRating: cargurusData.priceRating,
-		marketAverage: cargurusData.marketAverage,
-		daysOnMarket: cargurusData.daysOnMarket,
-		currency: 'USD'
-	} : undefined;
-	
+	const marketValue: MarketValue | undefined =
+		cargurusData.currentPrice || cargurusData.marketAverage
+			? {
+					askingPrice: cargurusData.currentPrice,
+					priceRating: cargurusData.priceRating,
+					marketAverage: cargurusData.marketAverage,
+					daysOnMarket: cargurusData.daysOnMarket,
+					currency: 'USD'
+				}
+			: undefined;
+
 	// Return normalized record
 	return {
 		vin,
