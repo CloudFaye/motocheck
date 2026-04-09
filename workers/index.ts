@@ -36,6 +36,9 @@ import { registerStitcherWorker } from './stitch-report.js';
 import { registerLLMAnalyzeWorker } from './llm-analyze.js';
 import { registerLLMWriteSectionsWorker } from './llm-write-sections.js';
 
+// Import document generation worker
+import { registerGenerateDocumentWorker } from './generate-document.js';
+
 // Import notification worker
 import { registerNotificationWorker } from './send-notifications.js';
 
@@ -100,13 +103,18 @@ async function registerAllWorkers(): Promise<void> {
 		await registerLLMWriteSectionsWorker(queue);
 		console.log('[workers] ✓ Registered 2 LLM workers');
 
+		// Register document generation worker (1 worker)
+		console.log('[workers] Registering document generation worker...');
+		await registerGenerateDocumentWorker(queue);
+		console.log('[workers] ✓ Registered document generation worker');
+
 		// Register notification worker (1 worker)
 		console.log('[workers] Registering notification worker...');
 		await registerNotificationWorker(queue);
 		console.log('[workers] ✓ Registered notification worker');
 
 		// Log total number of registered workers (Requirement 25.7, 86.4)
-		const totalWorkers = 16;
+		const totalWorkers = 17;
 		console.log(`[workers] ✓ Successfully registered ${totalWorkers} workers`);
 		console.log('[workers] Worker process is ready to process jobs');
 	} catch (error) {

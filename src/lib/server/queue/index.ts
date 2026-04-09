@@ -79,6 +79,7 @@ export async function createAllQueues(): Promise<void> {
 		'stitch-report',
 		'llm-analyze',
 		'llm-write-sections',
+		'generate-document',
 		'send-notification'
 	];
 

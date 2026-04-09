@@ -22,6 +22,7 @@ import { db } from '../src/lib/server/db/index.js';
 import { pipelineReports, reportSections, pipelineLog } from '../src/lib/server/db/schema.js';
 import { and, eq } from 'drizzle-orm';
 import { Jobs } from '../src/lib/server/queue/job-names.js';
+import { getQueue } from '../src/lib/server/queue/index.js';
 import type { Timeline } from '../src/lib/shared/types.js';
 
 interface SectionPrompt {
@@ -550,6 +551,12 @@ async function writeSections(job: { data: { vin: string } }): Promise<void> {
 
 			console.log(`[llm-write-sections] All sections completed for VIN: ${vin}`);
 			await logProgress(vin, 'completed', `Generated ${sectionsGenerated.length} sections`);
+
+			// Enqueue document generation job
+			const queue = await getQueue();
+			await queue.send(Jobs.GENERATE_DOCUMENT, { vin });
+
+			console.log(`[llm-write-sections] Enqueued document generation job for VIN: ${vin}`);
 		} else {
 			// Some sections failed, but report is still usable
 			await db

@@ -34,6 +34,9 @@ export const Jobs = {
 	LLM_ANALYZE: 'llm-analyze',
 	LLM_WRITE_SECTIONS: 'llm-write-sections',
 
+	// Document generation job - Create and send report documents
+	GENERATE_DOCUMENT: 'generate-document',
+
 	// Notification job - User progress and admin alerts
 	SEND_NOTIFICATION: 'send-notification'
 } as const;
