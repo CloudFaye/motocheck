@@ -22,7 +22,8 @@ import {
 	BorderStyle,
 	Packer,
 	Header,
-	Footer
+	Footer,
+	VerticalAlign
 } from 'docx';
 
 /**
@@ -411,11 +412,15 @@ function createPhotosSection(
  * Create a simple table
  */
 function createTable(headers: string[], rows: string[][]): Table {
+	// Calculate column widths evenly
+	const columnWidth = Math.floor(10000 / headers.length);
+	
 	return new Table({
 		width: {
 			size: 100,
 			type: WidthType.PERCENTAGE
 		},
+		columnWidths: headers.map(() => columnWidth),
 		rows: [
 			// Header row
 			new TableRow({
@@ -431,7 +436,8 @@ function createTable(headers: string[], rows: string[][]): Table {
 											size: 22,
 											color: 'FFFFFF'
 										})
-									]
+									],
+									alignment: AlignmentType.LEFT
 								})
 							],
 							shading: {
@@ -442,6 +448,11 @@ function createTable(headers: string[], rows: string[][]): Table {
 								bottom: 100,
 								left: 100,
 								right: 100
+							},
+							verticalAlign: VerticalAlign.CENTER,
+							width: {
+								size: columnWidth,
+								type: WidthType.DXA
 							}
 						})
 				),
@@ -461,7 +472,8 @@ function createTable(headers: string[], rows: string[][]): Table {
 													text: cell || 'N/A',
 													size: 22
 												})
-											]
+											],
+											alignment: AlignmentType.LEFT
 										})
 									],
 									shading: {
@@ -472,6 +484,11 @@ function createTable(headers: string[], rows: string[][]): Table {
 										bottom: 100,
 										left: 100,
 										right: 100
+									},
+									verticalAlign: VerticalAlign.CENTER,
+									width: {
+										size: columnWidth,
+										type: WidthType.DXA
 									}
 								})
 						)
@@ -479,12 +496,12 @@ function createTable(headers: string[], rows: string[][]): Table {
 			)
 		],
 		borders: {
-			top: { style: BorderStyle.SINGLE, size: 1, color: 'd1d5db' },
-			bottom: { style: BorderStyle.SINGLE, size: 1, color: 'd1d5db' },
-			left: { style: BorderStyle.SINGLE, size: 1, color: 'd1d5db' },
-			right: { style: BorderStyle.SINGLE, size: 1, color: 'd1d5db' },
-			insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'e5e7eb' },
-			insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'e5e7eb' }
+			top: { style: BorderStyle.SINGLE, size: 6, color: 'd1d5db' },
+			bottom: { style: BorderStyle.SINGLE, size: 6, color: 'd1d5db' },
+			left: { style: BorderStyle.SINGLE, size: 6, color: 'd1d5db' },
+			right: { style: BorderStyle.SINGLE, size: 6, color: 'd1d5db' },
+			insideHorizontal: { style: BorderStyle.SINGLE, size: 3, color: 'e5e7eb' },
+			insideVertical: { style: BorderStyle.SINGLE, size: 3, color: 'e5e7eb' }
 		}
 	});
 }
