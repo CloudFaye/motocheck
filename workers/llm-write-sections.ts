@@ -19,8 +19,8 @@
 
 import { generateText, getLLMInfo } from '../src/lib/server/llm/index.js';
 import { db } from '../src/lib/server/db/index.js';
-import { pipelineReports, reportSections, pipelineLog } from '../src/lib/server/db/schema.js';
-import { and, eq } from 'drizzle-orm';
+import { pipelineReports, reportSections, pipelineLog, orders, lookups } from '../src/lib/server/db/schema.js';
+import { and, eq, desc } from 'drizzle-orm';
 import { Jobs } from '../src/lib/server/queue/job-names.js';
 import { getQueue } from '../src/lib/server/queue/index.js';
 import type { Timeline } from '../src/lib/shared/types.js';
@@ -552,11 +552,26 @@ async function writeSections(job: { data: { vin: string } }): Promise<void> {
 			console.log(`[llm-write-sections] All sections completed for VIN: ${vin}`);
 			await logProgress(vin, 'completed', `Generated ${sectionsGenerated.length} sections`);
 
-			// Enqueue document generation job
-			const queue = await getQueue();
-			await queue.send(Jobs.GENERATE_DOCUMENT, { vin });
+			// Look up the most recent paid order for this VIN to ensure correct delivery
+			const orderResult = await db
+				.select({ id: orders.id })
+				.from(orders)
+				.innerJoin(lookups, eq(orders.lookupId, lookups.id))
+				.where(and(eq(lookups.vin, vin), eq(orders.status, 'paid')))
+				.orderBy(desc(orders.createdAt))
+				.limit(1);
 
-			console.log(`[llm-write-sections] Enqueued document generation job for VIN: ${vin}`);
+			if (orderResult.length === 0) {
+				console.warn(`[llm-write-sections] No paid order found for VIN ${vin}, skipping document generation`);
+			} else {
+				const orderId = orderResult[0].id;
+
+				// Enqueue document generation job with the specific orderId for correct delivery
+				const queue = await getQueue();
+				await queue.send(Jobs.GENERATE_DOCUMENT, { vin, orderId });
+
+				console.log(`[llm-write-sections] Enqueued document generation job for VIN: ${vin} (Order ID: ${orderId})`);
+			}
 		} else {
 			// Some sections failed, but report is still usable
 			await db

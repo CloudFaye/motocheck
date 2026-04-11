@@ -39,9 +39,6 @@ import { registerLLMWriteSectionsWorker } from './llm-write-sections.js';
 // Import document generation worker
 import { registerGenerateDocumentWorker } from './generate-document.js';
 
-// Import notification worker
-import { registerNotificationWorker } from './send-notifications.js';
-
 /**
  * Heartbeat interval in milliseconds (60 seconds)
  * Requirement 60.1
@@ -108,13 +105,8 @@ async function registerAllWorkers(): Promise<void> {
 		await registerGenerateDocumentWorker(queue);
 		console.log('[workers] ✓ Registered document generation worker');
 
-		// Register notification worker (1 worker)
-		console.log('[workers] Registering notification worker...');
-		await registerNotificationWorker(queue);
-		console.log('[workers] ✓ Registered notification worker');
-
 		// Log total number of registered workers (Requirement 25.7, 86.4)
-		const totalWorkers = 17;
+		const totalWorkers = 16;
 		console.log(`[workers] ✓ Successfully registered ${totalWorkers} workers`);
 		console.log('[workers] Worker process is ready to process jobs');
 	} catch (error) {

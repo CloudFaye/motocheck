@@ -12,8 +12,7 @@ import {
 	reportSections,
 	odometerReadings,
 	vehiclePhotos,
-	orders,
-	lookups
+	orders
 } from '../src/lib/server/db/schema.js';
 import { eq, asc } from 'drizzle-orm';
 import { Jobs } from '../src/lib/server/queue/job-names.js';
@@ -36,6 +35,7 @@ import {
 
 interface JobData {
 	vin: string;
+	orderId: string;
 }
 
 /**
@@ -514,31 +514,29 @@ async function generateDocument(vin: string): Promise<Buffer> {
 
 /**
  * Send document to user via email or Telegram
+ * Uses orderId directly to ensure the document is sent to the correct order's recipient
  */
-async function sendDocument(vin: string, docxBuffer: Buffer): Promise<void> {
-	// Get order info by joining lookups and orders tables
+async function sendDocument(vin: string, orderId: string, docxBuffer: Buffer): Promise<void> {
+	// Fetch the specific order by its ID — no VIN-based lookup that could match wrong orders
 	const result = await db
 		.select({
 			id: orders.id,
 			email: orders.email,
-			telegramChatId: orders.telegramChatId,
-			lookupId: orders.lookupId
+			telegramChatId: orders.telegramChatId
 		})
 		.from(orders)
-		.innerJoin(lookups, eq(orders.lookupId, lookups.id))
-		.where(eq(lookups.vin, vin))
+		.where(eq(orders.id, orderId))
 		.limit(1);
-
 	if (!result || result.length === 0) {
-		console.log(`[generate-document] No order found for VIN ${vin}`);
+		console.log(`[generate-document] No order found for orderId ${orderId} (VIN: ${vin})`);
 		return;
 	}
 
 	const orderData = result[0];
 
-	console.log(`[generate-document] Sending document to ${orderData.email} for VIN ${vin}`);
+	console.log(`[generate-document] Sending document to ${orderData.email} for VIN ${vin} (Order ID: ${orderData.id})`);
 
-	// Send via email
+	// Send via email (only for non-telegram orders)
 	if (orderData.email && !orderData.email.startsWith('telegram')) {
 		try {
 			const emailService = await getEmailService();
@@ -606,9 +604,9 @@ export async function handleGenerateDocument(jobs: Job<JobData>[]): Promise<void
 }
 
 async function processGenerateDocument(job: Job<JobData>): Promise<void> {
-	const { vin } = job.data;
+	const { vin, orderId } = job.data;
 
-	console.log(`[generate-document] Starting document generation for VIN: ${vin}`);
+	console.log(`[generate-document] Starting document generation for VIN: ${vin} (Order ID: ${orderId})`);
 
 	try {
 		// Generate DOCX document
@@ -616,8 +614,8 @@ async function processGenerateDocument(job: Job<JobData>): Promise<void> {
 
 		console.log(`[generate-document] Document generated for VIN: ${vin} (${docxBuffer.length} bytes)`);
 
-		// Send document to user
-		await sendDocument(vin, docxBuffer);
+		// Send document to the specific order's recipient
+		await sendDocument(vin, orderId, docxBuffer);
 
 		console.log(`[generate-document] Successfully sent document for VIN: ${vin}`);
 	} catch (error) {
